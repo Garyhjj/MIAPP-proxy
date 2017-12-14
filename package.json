@@ -1,0 +1,31 @@
+{
+  "name": "miapp-proxy",
+  "version": "1.0.0",
+  "description": "middle server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Garyhjj/MIAPP-proxy.git"
+  },
+  "keywords": [
+    "proxy"
+  ],
+  "author": "gary.h",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Garyhjj/MIAPP-proxy/issues"
+  },
+  "homepage": "https://github.com/Garyhjj/MIAPP-proxy#readme",
+  "dependencies": {
+    "koa": "2.4.1",
+    "koa-convert": "1.2.0",
+    "koa-cors": "0.0.16",
+    "koa-proxy": "0.9.0",
+    "koa-router": "7.3.0",
+    "request": "2.83.0",
+    "request-promise-native": "1.0.5"
+  }
+}
