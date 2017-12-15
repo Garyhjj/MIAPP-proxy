@@ -15,5 +15,5 @@ module.exports ={
             ctx.response.status = code || 500;
             ctx.response.body = err.error || err.message;
         }
-    };
+    }
 }
