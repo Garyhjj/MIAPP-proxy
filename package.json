@@ -4,7 +4,7 @@
   "description": "middle server",
   "main": "index.js",
   "scripts": {
-    "serve": "pm2 start index.js"
+    "serve": "pm2 start index.js --name='miapp-proxy'"
   },
   "repository": {
     "type": "git",
