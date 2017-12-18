@@ -4,7 +4,9 @@
   "description": "middle server",
   "main": "index.js",
   "scripts": {
-    "serve": "pm2 start index.js --name='miapp-proxy'"
+    "serve": "pm2 start index.js --name='miapp-proxy'",
+    "update": "git pull && npm i && pm2 restart 'miapp-proxy'",
+    "kill": "pm2 delete 'miapp-proxy'"
   },
   "repository": {
     "type": "git",
