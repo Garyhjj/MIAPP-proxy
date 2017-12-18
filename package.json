@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/Garyhjj/MIAPP-proxy#readme",
   "dependencies": {
+    "jsonwebtoken": "8.1.0",
     "koa": "2.4.1",
     "koa-body": "^2.5.0",
     "koa-convert": "1.2.0",

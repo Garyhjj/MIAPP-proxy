@@ -3,11 +3,14 @@ const Router = require('koa-router'),
     config = require('../../config/base'),
     util = require('../../util'),
     reqOption = util.requestOption,
-    isErr = util.isReqError;
+    isErr = util.isReqError,
+    jwtCheck = require('../../middlewares/').jwtCheck;
 
 var router = new Router({
     prefix: '/IPQA'
 });
+
+router.use(jwtCheck);
 
 router.get('/GetMachineCheckList', async(ctx) => {
     let a = await request.get(config.proxy + ctx.request.url, reqOption(ctx)).catch(err =>err);
