@@ -2,8 +2,12 @@ const koa = require('koa'),
     proxy = require('koa-proxy'),
     convert = require('koa-convert'),
     koaBody = require('koa-body'),
+    http = require('http'),
+    https = require('https'),
     cors = require('koa-cors'),
-    winston = require('winston');
+    winston = require('winston'),
+    enforceHttps = require('koa-sslify'),
+    fs = require('fs');
 moment = require('moment');
 const {
     logger
@@ -14,6 +18,9 @@ const config = require('./config').base;
 const handleError = require('./util/').handlerError;
 
 var app = new koa();
+
+// app.use(enforceHttps());
+
 app.use(convert(cors()));
 app.use(koaBody());
 
@@ -51,4 +58,10 @@ app.use(convert(proxy({
     host: config.proxy
 })));
 
-app.listen(80);
+const options = {
+    key: fs.readFileSync('./ssl/server.key'),  //ssl文件路径
+    cert: fs.readFileSync('./ssl/server.pem')  //ssl文件路径
+};
+
+http.createServer(app.callback()).listen(80);
+https.createServer(options, app.callback()).listen(443);
