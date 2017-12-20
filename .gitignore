@@ -1,4 +1,3 @@
 /node_modules/
 
-/logs/error/*.log
-/logs/success/*.log
+
