@@ -16,6 +16,7 @@ const {
 const route = require('./route');
 const config = require('./config').base;
 const handleError = require('./util/').handlerError;
+const prepareReqOption = require('./middlewares/').prepareReqOption;
 
 var app = new koa();
 
@@ -23,6 +24,7 @@ var app = new koa();
 
 app.use(convert(cors()));
 app.use(koaBody());
+app.use(prepareReqOption);
 
 // 正常请求日志
 // app.use(logger({
