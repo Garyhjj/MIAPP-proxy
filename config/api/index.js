@@ -1,3 +1,4 @@
 module.exports ={
-    IPQA:require('./IPQA')
+    IPQA: require('./IPQA'),
+    guid: require('./guid');
 }

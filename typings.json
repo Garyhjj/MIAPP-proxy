@@ -1,5 +1,6 @@
 {
   "globalDependencies": {
+    "async": "registry:dt/async#2.0.1+20170322225536",
     "moment": "registry:dt/moment#2.11.1+20161010105546"
   }
 }

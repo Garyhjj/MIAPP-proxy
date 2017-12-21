@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "serve": "pm2 start index.js --name='miapp-proxy'",
-    "update": "git pull && npm i && pm2 restart 'miapp-proxy'",
+    "update": "git pull && npm i && pm2 reload 'miapp-proxy'",
     "kill": "pm2 delete 'miapp-proxy'"
   },
   "repository": {
@@ -35,6 +35,7 @@
     "moment": "2.19.4",
     "request": "2.83.0",
     "request-promise-native": "1.0.5",
+    "rxjs": "^5.5.5",
     "winston": "2.4.0"
   }
 }

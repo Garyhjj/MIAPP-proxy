@@ -25,32 +25,32 @@ app.use(convert(cors()));
 app.use(koaBody());
 
 // 正常请求日志
-app.use(logger({
-    transports: [
-        new(winston.transports.Console)({
-            json: true,
-            colorize: true
-        }),
-        new winston.transports.File({
-            filename: `logs/success/${moment(new Date()).format('YYYYMMDD')}.log`
-        })
-    ]
-}))
+// app.use(logger({
+//     transports: [
+//         new(winston.transports.Console)({
+//             json: true,
+//             colorize: true
+//         }),
+//         new winston.transports.File({
+//             filename: `logs/success/${moment(new Date()).format('YYYYMMDD')}.log`
+//         })
+//     ]
+// }))
 
-// 错误请求日志
-app.use(logger({
-    transports: [
-        new winston.transports.Console({
-            json: true,
-            colorize: true
-        }),
-        new winston.transports.File({
-            filename: `logs/error/${moment(new Date()).format('YYYYMMDD')}.log`
-        })
-    ]
-}))
+// // 错误请求日志
+// app.use(logger({
+//     transports: [
+//         new winston.transports.Console({
+//             json: true,
+//             colorize: true
+//         }),
+//         new winston.transports.File({
+//             filename: `logs/error/${moment(new Date()).format('YYYYMMDD')}.log`
+//         })
+//     ]
+// }))
 
-app.use(handleError);
+// app.use(handleError);
 
 route(app);
 
