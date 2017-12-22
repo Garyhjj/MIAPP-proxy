@@ -1,18 +1,15 @@
 const request = require('request-promise-native');
 const baseReq = require('../baseReq');
-const requestOption = require('../../../../../util/requestOption');
 const rxjs = require('rxjs');
 
 module.exports = {
-    getOwnUndoneReport: (ctx) => {
-        if(!ctx) return;
-        query = ctx.request.body || {};
-        ctx.reqOpt = requestOption(ctx);
-        let problemStatus = ['Waiting', 'Highlight'];
-        ctx.query1 = Object.assign(query,{problemStatus:problemStatus[0]});
-        ctx.query2 = Object.assign(query,{problemStatus:problemStatus[1]});
-        let getExcReportData = baseReq.getExcReportData;
+    getOwnUndoneReport(query,reqOption){
         let Observable = rxjs.Observable;
-        return Observable.forkJoin(Observable.fromPromise(getExcReportData(ctx.query1,ctx.reqOpt)),Observable.fromPromise(baseReq.getExcReportData(ctx.query2,ctx.reqOpt)));
+        if(!query && !reqOption) return Observable.of([]);
+        let problemStatus = ['Waiting', 'Highlight'];
+        let query1 = Object.assign(query,{problemStatus:problemStatus[0]});
+        let query2 = Object.assign(query,{problemStatus:problemStatus[1]});
+        let getExcReportData = baseReq.getExcReportData;
+        return Observable.forkJoin(Observable.fromPromise(getExcReportData(query1,reqOption)),Observable.fromPromise(baseReq.getExcReportData(query2,reqOption))).map((res) => res[0].concat(res[1]));
     } 
 }

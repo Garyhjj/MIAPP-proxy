@@ -7,15 +7,15 @@ const topUtils = require('../../../../util/');
 const getRole = topUtils.getRole;
 const isErr = require('../../../../util/').isReqError;
 const moment = require('moment');
-class BossTipsCollection extends TipsCollection {
+class EquipTipsCollection extends TipsCollection {
     constructor() {
         super();
-        this.id = config.boss
+        this.id = config.equip
     }
 
     async getNewTips(ctx, list) {
         let role = getRole(list,this.id);
-        return Promise.all([this.getOwnUndoneTips(ctx), this.getAdminTotalTips(ctx,{role}),this.getOwnTaskTips(ctx)]).then((res) => res.reduce((a, b) => a + b, 0));
+        return Promise.all([this.getOwnUndoneTips(ctx), this.getAdminTotalTips(ctx,{role})]).then((res) => res.reduce((a, b) => a + b, 0));
     }
 
     getOwnUndoneTips(ctx) {
@@ -26,10 +26,6 @@ class BossTipsCollection extends TipsCollection {
         return bossReq.getOwnUndoneReport(send, option).map((a) => a.length).toPromise();
     }
 
-    async getOwnTaskTips(ctx) {
-        let query = ctx.request.body;
-        return rxjs.Observable.fromPromise(baseReq.getEmployeeSchedule({company:query.company_name},ctx.miOption)).map((d) => d.filter((l) => +l.REPORT_ID === 0).length).toPromise();
-    }
     async getAdminTotalTips(ctx, opts) {
         let myOpt = opts || {};
         let role = opts.role;
@@ -68,4 +64,4 @@ class BossTipsCollection extends TipsCollection {
     }
 }
 
-module.exports = BossTipsCollection;
+module.exports = EquipTipsCollection;

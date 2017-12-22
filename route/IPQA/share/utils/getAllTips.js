@@ -1,27 +1,27 @@
 const TipsCollection = require('../../../share/utils/tipsCollection');
 const config = require('../config/');
 const getBossTips = require('./getBossTips');
+const getEquipTips = require('./getEquipTips');
+const getIPQATips = require('./getIPQATips');
 const topBaseReq = require('../../../share/utils/baseReq');
 const requestOption = require('../../../../util/requestOption');
 const isErr = require('../../../../util/').isReqError;
 const rxjs = require('rxjs');
-
+const ModuleTip = require('../../../share/models/').ModuleTip;
 class IPQATipsCollection extends TipsCollection {
-    constructor(sub) {
-        super(sub);
+    constructor(...sub) {
+        super(...sub);
         this.id = config.moduleId;
     }
 
     async getNewTips(ctx, ids) {
+        let oriRes = Promise.resolve(new ModuleTip(this.id,0));
         if (!ids) {
-            let a = await topBaseReq.getPrivilege(this.id, requestOption(ctx)).catch((err) => err);
+            let a = await topBaseReq.getPrivilege(this.id, ctx.miOption).catch((err) => err);
             if (!isErr(a)) {
                 this.privilegeList = JSON.parse(a);
             } else {
-                return Promise.resolve({
-                    moduleId: this.id,
-                    tips: 0
-                });
+                return oriRes
             }
             if (this.subTipsCollection && this.subTipsCollection.length > 0) {
                 let req = [];
@@ -33,25 +33,16 @@ class IPQATipsCollection extends TipsCollection {
                 return Promise.all(req).then((res) => {
                     let tips = 0;
                     res.forEach((r) => {
-                        let t = r.tips | 0;
+                        let t = r || 0;
                         tips +=t;
                     })
-                    return {
-                        moduleId: this.id,
-                        tips: tips
-                    }
+                    return new ModuleTip(this.id,tips)
                 })
             } else {
-                return Promise.resolve({
-                    moduleId: this.id,
-                    tips: 0
-                });
+                return oriRes
             }
         } else {
-            return Promise.resolve({
-                moduleId: this.id,
-                tips: 0
-            });
+            return oriRes
         }
     }
     hasPrivilege(type) {
@@ -68,4 +59,4 @@ class IPQATipsCollection extends TipsCollection {
 
 }
 
-module.exports = new IPQATipsCollection(new getBossTips());
+module.exports = new IPQATipsCollection(new getBossTips(),new getEquipTips(),new getIPQATips());

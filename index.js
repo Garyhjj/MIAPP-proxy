@@ -26,7 +26,7 @@ app.use(convert(cors()));
 app.use(koaBody());
 app.use(prepareReqOption);
 
-if (process.env.NODE_ENV.trim() === 'production') {
+if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === 'production') {
     // 正常请求日志
     app.use(logger({
         transports: [
@@ -68,5 +68,5 @@ const options = {
     cert: fs.readFileSync('./ssl/server.pem')  //ssl文件路径
 };
 
-http.createServer(app.callback()).listen(8000);
+http.createServer(app.callback()).listen(80);
 https.createServer(options, app.callback()).listen(443);

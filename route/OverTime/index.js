@@ -11,7 +11,7 @@ router.get('/GetOverTimeTotalHours', async (ctx) => {
     let a = await request.get(config.proxy + ctx.request.url, reqOption(ctx)).catch(err => {
         ctx.response.status = 500;
         ctx.respond.message = 456;
-        console.log(err)});
+    })
     ctx.response.body = a;
 })
 

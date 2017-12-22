@@ -14,16 +14,8 @@ var router = new Router({
 router.use(jwtCheck);
 
 router.post('/tips', async(ctx) => {
-    // let a = await request.get(config.proxy + ctx.request.url, reqOption(ctx)).catch(err =>err);
-    // if (isErr(a)) {
-    //     ctx.response.status = a.statusCode || 400;
-    //     ctx.response.body = a.error;
-    // } else {
-    //     ctx.response.body = a;
-    // }
     let a = await getAllTips.getNewTips(ctx);
-    
-    ctx.response.body = 'a';
+    ctx.response.body = a;
 })
 
 module.exports = router;
