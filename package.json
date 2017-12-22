@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/Garyhjj/MIAPP-proxy#readme",
   "dependencies": {
+    "ejs": "^2.5.7",
     "https": "^1.0.0",
     "jsonwebtoken": "8.1.0",
     "koa": "2.4.1",
@@ -32,6 +33,7 @@
     "koa-proxy": "0.9.0",
     "koa-router": "7.3.0",
     "koa-sslify": "^2.1.2",
+    "koa-views": "^6.1.3",
     "koa2-winston": "1.7.1",
     "moment": "2.19.4",
     "request": "2.83.0",

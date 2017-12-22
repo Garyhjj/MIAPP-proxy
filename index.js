@@ -7,8 +7,10 @@ const koa = require('koa'),
     cors = require('koa-cors'),
     winston = require('winston'),
     enforceHttps = require('koa-sslify'),
-    fs = require('fs');
-moment = require('moment');
+    fs = require('fs'),
+    views = require('koa-views'),
+    ejs = require('ejs'),
+    moment = require('moment');
 const {
     logger
 } = require('koa2-winston');
@@ -24,13 +26,16 @@ var app = new koa();
 
 app.use(convert(cors()));
 app.use(koaBody());
+app.use(views(__dirname + '/views', {
+    extension: 'ejs'
+}));
 app.use(prepareReqOption);
-
+// app.use((ctx) => ctx.render('1.ejs'));
 if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === 'production') {
     // 正常请求日志
     app.use(logger({
         transports: [
-            new (winston.transports.Console)({
+            new(winston.transports.Console)({
                 json: true,
                 colorize: true
             }),
@@ -64,8 +69,8 @@ app.use(convert(proxy({
 })));
 
 const options = {
-    key: fs.readFileSync('./ssl/server.key'),  //ssl文件路径
-    cert: fs.readFileSync('./ssl/server.pem')  //ssl文件路径
+    key: fs.readFileSync('./ssl/server.key'), //ssl文件路径
+    cert: fs.readFileSync('./ssl/server.pem') //ssl文件路径
 };
 
 http.createServer(app.callback()).listen(80);
