@@ -1,0 +1,9 @@
+<ul class="nav nav-pills nav-stacked nav-pills-stacked-example">
+    <% for(var i =0;i<des.info.length;i++) {
+        var pre = des.info[i].info.prefix;
+        %>
+        <li role="presentation" class=<%= route.info.prefix ===pre?'active':'' %>>
+            <a href=<%='/nodeAPI/lists?prefix=' + pre %>><%= pre%></a>
+        </li>
+    <%}%>
+</ul>

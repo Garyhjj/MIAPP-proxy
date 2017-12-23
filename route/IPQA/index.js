@@ -19,6 +19,7 @@ router.use(jwtCheck);
 
 router.get('/adminTotalTips', async(ctx) => {
     let role = +ctx.query.role;
+    role = isNaN(role)?0:+role;
     let type = ctx.query.type;
     let res = 0;
     if(type === config.boss) {
