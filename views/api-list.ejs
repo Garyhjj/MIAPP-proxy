@@ -6,7 +6,7 @@
                     <%- include('sider') %>
             </div>
             <div class="col-lg-9">
-                    <table class="table">
+                    <table class="table table-striped">
                             <caption><%= route.info.prefix %></caption>
                             <thead>
                               <tr>
@@ -17,8 +17,9 @@
                               </tr>
                             </thead>
                             <tbody>
-                                <% for(var i=0;i<route.info.routes.length;i++){
-                                    var h = 1;
+                                <% 
+                                var h = 1;
+                                for(var i=0;i<route.info.routes.length;i++){
                                     var r = route.info.routes[i]
                                     for(var y=0;y<r.info.des.length;y++){
                                         var d = r.info.des[y];
@@ -28,12 +29,14 @@
                                                     <th scope="row"><%= h++ %></th>
                                                     <td><%= d.method %></td>
                                                     <td>
-                                                        <% for(var k =0;k<d.parmas.length;k++){
+                                                        <% 
+                                                        if(d.parmas){
+                                                        for(var k =0;k<d.parmas.length;k++){
                                                             var right = k===0? '?':'&';
                                                             var p = d.parmas[k].name;
                                                             parmasUrl += right + p+'='+'{'+p +'}'
-                                                        }%>
-                                                        <%= parmasUrl %>
+                                                        }}%>
+                                                        <a href=<%=  `/nodeAPI/details?prefix=${route.info.prefix}&route=${r.info.route}&method=${d.method}` %>> <%= parmasUrl %> </a>
                                                     </td>
                                                     <td><%= d.tip %></td>
                                                   </tr>

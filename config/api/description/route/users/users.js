@@ -4,13 +4,20 @@ module.exports = {
         des:[
             {
                 method:'POST',
-                parmas:[{
-                    name:'abc',
-                    type: 'number',
-                    canNull: false,
+                body:`{
+                    empno:string,
+                    company_name:string
+                }`,
+                results:[{
+                    code:200,
+                    data: `非负整数`
                 }],
-                tip:'fdgdfg',
-                example: '?abc=2'
+                body_example:`{
+                    empno:FX823,
+                    company_name:MSL
+                }`,
+                tip:'获得所有模块的提示数',
+                url_example: ''
             }
         ]
     }

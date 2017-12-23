@@ -29,13 +29,13 @@ router.get('/details', async(ctx) => {
     let route = ctx.query.route;
     let method = ctx.query.method;
     if(!prefix || !route) ctx.redirect('back');
-    let route = des.info.find(i => i.info.prefix === prefix);
-    if(!route) ctx.redirect('back');
-    let apis =  route.info.routes.find((r) =>r.route === route);
+    let router = des.info.find(i => i.info.prefix === prefix);
+    if(!router) ctx.redirect('back');
+    let apis =  router.info.routes.find((r) =>r.info.route === route);
     if(!apis) ctx.redirect('back');
     let api = apis.info.des.find((a) => a.method === method);
     if(!api) ctx.redirect('back');
-    await ctx.render('api-detail.ejs',{home:false,des:des,route:route,api:api});
+    await ctx.render('api-detail.ejs',{home:false,des:des,route:router,api:api,apis:apis});
 })
 
 module.exports = router;

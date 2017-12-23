@@ -4,7 +4,8 @@ module.exports = {
     info:{
         prefix: 'IPQA',
         routes:[
-            require('./adminTotalTips')
+            require('./adminTotalTips'),
+            require('./ownUndoneReports')
         ]
     }
 }

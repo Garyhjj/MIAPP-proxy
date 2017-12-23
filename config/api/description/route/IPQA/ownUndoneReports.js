@@ -1,13 +1,13 @@
 module.exports = {
     info: {
-        route: 'adminTotalTips',
+        route: 'ownUndoneReports',
         des: [
             {
                 method: 'GET',
                 parmas: [
                     {
-                        name: 'role',
-                        type: 'number类型,1超级管理员,2普通管理员,3普通使用者',
+                        name: 'company_name',
+                        type: 'string类型: MSL',
                         canNull: true,
                     },
                     {
@@ -18,10 +18,10 @@ module.exports = {
                 ],
                 results:[{
                     code:200,
-                    data: `非负整数`
+                    data: `line_report格式`
                 }],
-                tip: '获得对于管理员的提醒数',
-                url_example: '?role=1&type=boss'
+                tip: '根据类别获得需要处理的报告',
+                url_example: '?company_name=MSL&type=boss'
             }
         ]
     }
