@@ -8,7 +8,7 @@ module.exports = {
 {
     empno:string,
     company_name:string,
-    moduleId: {MODULE_ID:number}[]
+    moduleId: number[]
 }`,
                 results:[{
                     code:200,
@@ -18,7 +18,7 @@ module.exports = {
 {
     empno:FX823,
     company_name:MSL,
-    moduleId:[{MODULE_ID:61}]
+    moduleId:[61,22]
 }`,
                 tip:'获得所有模块的提示数',
                 url_example: ''
