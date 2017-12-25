@@ -1,0 +1,53 @@
+<%- include('header') %>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-3">
+                    <%- include('sider') %>
+            </div>
+            <div class="col-sm-9">
+                    <table class="table table-striped">
+                            <caption><%= route.info.prefix %></caption>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>method</th>
+                                <th>API</th>
+                                <th>description</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                                <% 
+                                var h = 1;
+                                for(var i=0;i<route.info.routes.length;i++){
+                                    var r = route.info.routes[i]
+                                    for(var y=0;y<r.info.des.length;y++){
+                                        var d = r.info.des[y];
+                                        var parmasUrl= route.info.prefix + '/' + r.info.route;
+                                        %>
+                                            <tr>
+                                                    <th scope="row"><%= h++ %></th>
+                                                    <td><%= d.method %></td>
+                                                    <td>
+                                                        <% 
+                                                        if(d.parmas){
+                                                        for(var k =0;k<d.parmas.length;k++){
+                                                            var right = k===0? '?':'&';
+                                                            var p = d.parmas[k].name;
+                                                            parmasUrl += right + p+'='+'{'+p +'}'
+                                                        }}%>
+                                                        <a href=<%=  `/nodeAPI/details?prefix=${route.info.prefix}&route=${r.info.route}&method=${d.method}` %>> <%= parmasUrl %> </a>
+                                                    </td>
+                                                    <td><%= d.tip %></td>
+                                                  </tr>
+                                        <%}}%>
+                              
+                            </tbody>
+                          </table>
+            </div>
+        </div>
+    </div>
+
+
+
+    <%- include('footer') %>
