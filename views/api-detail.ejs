@@ -1,0 +1,125 @@
+<%- include('header') %>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3">
+                <%- include('sider') %>
+            </div>
+            <div class="col-lg-9">
+                <div class="page-header">
+                    <h1>
+                        <% 
+                                    var parmasUrl= route.info.prefix + '/' + apis.info.route;
+                                    var parmasUrlEx = parmasUrl;
+                                    if(api.parmas){
+                                    for(var k =0;k<api.parmas.length;k++){
+                                        var right = k===0? '?':'&';
+                                        var p = api.parmas[k].name;
+                                        parmasUrlEx += right + p+'='+'{'+p +'}'
+                                    }}%>
+                            <%= parmasUrlEx %>
+                                <small>
+                                    <%= api.method %>
+                                </small>
+                    </h1>
+                    <h4>
+                        <%= api.tip %>
+                    </h4>
+                </div>
+                <% if(api.body){%>
+                    <div>
+                        <h3>body参数要求：</h3>
+                        <h4>
+                            <%= api.body%>
+                        </h4>
+                    </div>
+                <%}%>
+                <% if(api.parmas && api.parmas.length>0) {%>
+                <table class="table table-striped">
+                    <caption>url参数说明</caption>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>name</th>
+                            <th>type</th>
+                            <th>是否可空</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% var h = 1;
+                                for(var i=0;i<api.parmas.length;i++){
+                                    var r = api.parmas[i]
+                                        %>
+                            <tr>
+                                <th scope="row">
+                                    <%= h++ %>
+                                </th>
+                                <td>
+                                    <%= r.name %>
+                                </td>
+                                <td>
+                                    <%= r.type %>
+                                </td>
+                                <td>
+                                    <%= r.canNull?'是':'否' %>
+                                </td>
+                            </tr>
+                            <%}%>
+
+                    </tbody>
+                </table>
+                <%}%>
+                <% if(api.url_example){%>
+                <div class="margin">
+                    <h3>url例子:</h3>
+                    <h4>
+                        <%= parmasUrl + api.url_example %>
+                    </h4>
+                </div>
+                <%}%>
+                <% if(api.body_example){%>
+                    <div class="margin">
+                        <h3>body例子:</h3>
+                        <h4>
+                            <%= parmasUrl + api.body_example %>
+                        </h4>
+                    </div>
+                    <%}%>
+                <% if(api.results && api.results.length>0) {%>
+                <table class="table table-striped margin">
+                    <caption>回复说明</caption>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>code</th>
+                            <th>data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <%
+                            for(var i=0;i<api.results.length;i++){
+                                var r = api.results[i]
+                        %>
+                            <tr>
+                                <th scope="row">
+                                    <%= ++i %>
+                                </th>
+                                <td>
+                                    <%= r.code %>
+                                </td>
+                                <td>
+                                    <%= r.data %>
+                                </td>
+                            </tr>
+                            <%}%>
+
+                    </tbody>
+                </table>
+                <%}%>
+            </div>
+        </div>
+    </div>
+
+
+
+    <%- include('footer') %>

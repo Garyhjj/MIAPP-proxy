@@ -10,6 +10,7 @@ const koa = require('koa'),
     fs = require('fs'),
     views = require('koa-views'),
     ejs = require('ejs'),
+    static = require('koa-static'),
     moment = require('moment');
 const {
     logger
@@ -29,8 +30,9 @@ app.use(koaBody());
 app.use(views(__dirname + '/views', {
     extension: 'ejs'
 }));
+app.use(static(__dirname + '/public'));
 app.use(prepareReqOption);
-// app.use((ctx) => ctx.render('1.ejs'));
+
 if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === 'production') {
     // 正常请求日志
     app.use(logger({
@@ -73,5 +75,5 @@ const options = {
     cert: fs.readFileSync('./ssl/server.pem') //ssl文件路径
 };
 
-http.createServer(app.callback()).listen(80);
+http.createServer(app.callback()).listen(8000);
 https.createServer(options, app.callback()).listen(443);
