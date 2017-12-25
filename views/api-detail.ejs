@@ -2,10 +2,10 @@
 
     <div class="container">
         <div class="row">
-            <div class="col-lg-3">
+            <div class="col-sm-3">
                 <%- include('sider') %>
             </div>
-            <div class="col-lg-9">
+            <div class="col-sm-9">
                 <div class="page-header">
                     <h1>
                         <% 
@@ -30,7 +30,7 @@
                     <div>
                         <h3>body参数要求：</h3>
                         <h4>
-                            <%= api.body%>
+                            <pre><code><%= api.body%></code></pre>
                         </h4>
                     </div>
                 <%}%>
@@ -73,7 +73,7 @@
                 <div class="margin">
                     <h3>url例子:</h3>
                     <h4>
-                        <%= parmasUrl + api.url_example %>
+                        <pre><code><%= parmasUrl + api.url_example %></code></pre>
                     </h4>
                 </div>
                 <%}%>
@@ -81,7 +81,7 @@
                     <div class="margin">
                         <h3>body例子:</h3>
                         <h4>
-                            <%= parmasUrl + api.body_example %>
+                            <pre><code><%= api.body_example %></code></pre>
                         </h4>
                     </div>
                     <%}%>
@@ -108,7 +108,7 @@
                                     <%= r.code %>
                                 </td>
                                 <td>
-                                    <%= r.data %>
+                                    <pre><code><%= r.data %></code></pre>
                                 </td>
                             </tr>
                             <%}%>

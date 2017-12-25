@@ -75,5 +75,5 @@ const options = {
     cert: fs.readFileSync('./ssl/server.pem') //ssl文件路径
 };
 
-http.createServer(app.callback()).listen(8000);
+http.createServer(app.callback()).listen(80);
 https.createServer(options, app.callback()).listen(443);

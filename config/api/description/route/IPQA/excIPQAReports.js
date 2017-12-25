@@ -1,18 +1,18 @@
 module.exports = {
     info: {
-        route: 'ownUndoneReports',
+        route: 'excIPQAReports',
         des: [
             {
                 method: 'GET',
                 parmas: [
                     {
-                        name: 'company_name',
-                        type: 'string类型: MSL',
+                        name: 'role',
+                        type: 'number类型,1管理员,3普通使用者',
                         canNull: true,
                     },
                     {
-                        name: 'type',
-                        type: '巡检类别: boss、equip',
+                        name: 'company_name',
+                        type: 'string类型: MSL',
                         canNull: true,
                     },
                     {
