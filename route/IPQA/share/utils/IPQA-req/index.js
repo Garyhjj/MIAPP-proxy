@@ -17,11 +17,11 @@ module.exports = {
             }, baseQuery), reqOption),
             getExcReportDataWaitingBoss = baseReq.getExcReportData(Object.assign({
                 problemStatus: problemStatus[2],
-                bossEmpno: query.empno
+                boss_empno: query.empno
             }, baseQuery), reqOption),
             getExcReportDataWaitingQA = baseReq.getExcReportData(Object.assign({
                 problemStatus: problemStatus[3],
-                qaEmpno: query.empno
+                qa_empno: query.empno
             }, baseQuery), reqOption),
             getExcReportDataDone = baseReq.getExcReportData(Object.assign({
                 problemStatus: problemStatus[4],
