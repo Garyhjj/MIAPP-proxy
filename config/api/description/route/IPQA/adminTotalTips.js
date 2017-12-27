@@ -14,6 +14,11 @@ module.exports = {
                         name: 'type',
                         type: '巡检类别: boss、equip',
                         canNull: true,
+                    },
+                    {
+                        name: 'company_name',
+                        type: 'string类型: MSL',
+                        canNull: true,
                     }
                 ],
                 results:[{
@@ -21,7 +26,7 @@ module.exports = {
                     data: `非负整数`
                 }],
                 tip: '获得对于管理员的提醒数',
-                url_example: '?role=1&type=boss'
+                url_example: '?role=1&type=boss&company_name=MSL'
             }
         ]
     }
