@@ -22,10 +22,11 @@ router.get('/adminTotalTips', async(ctx) => {
     role = isNaN(role)?0:+role;
     let type = ctx.query.type;
     let res = 0;
+    let opts = {role,company_name:ctx.query.company_name};
     if(type === config.boss) {
-        res = await bossTipsCollection.getAdminTotalTips(ctx,{role});
+        res = await bossTipsCollection.getAdminTotalTips(ctx,opts);
     }else if(type === config.equip) {
-        res = await equipTipsCollection.getAdminTotalTips(ctx,{role});
+        res = await equipTipsCollection.getAdminTotalTips(ctx,opts);
     }
     ctx.response.body = res;
 })

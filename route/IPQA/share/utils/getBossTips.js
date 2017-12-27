@@ -35,6 +35,7 @@ class BossTipsCollection extends TipsCollection {
         let role = opts.role;
         if (!role || role === 3) return Promise.resolve(0);
         let query = ctx.request.body || {};
+        Object.assign(query,opts);
         let company_name = query.company_name;
         let miOption = ctx.miOption;
         let mriL = await baseReq.getMriName({
@@ -53,7 +54,7 @@ class BossTipsCollection extends TipsCollection {
             let trackQuery = {
                 dateFM: from,
                 dateTO: to,
-                company_name: query.company_name
+                company_name: company_name
             };
             mriL.forEach((l) => {
                 trackQuery.nameID = l.NAME_ID;
