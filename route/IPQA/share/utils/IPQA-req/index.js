@@ -11,10 +11,6 @@ module.exports = {
             company_name: query.company_name
         }
         let problemStatus = ['New', 'Waiting', 'WaitingBoss', 'WaitingQA', 'Done'],
-            getExcReportDataNew = baseReq.getExcReportData(Object.assign({
-                problemStatus: problemStatus[0],
-                empno: ''
-            }, baseQuery), reqOption),
             getExcReportDataWaiting = baseReq.getExcReportData(Object.assign({
                 problemStatus: problemStatus[1],
                 empno: query.empno
@@ -31,7 +27,7 @@ module.exports = {
                 problemStatus: problemStatus[4],
                 closer_empno: query.empno
             }, baseQuery), reqOption);
-        return Observable.forkJoin(getExcReportDataNew, getExcReportDataWaiting, getExcReportDataWaitingBoss, getExcReportDataWaitingQA, getExcReportDataDone).map((res) => res.reduce((a, b) => a.concat(b)))
+        return Observable.forkJoin(getExcReportDataWaiting, getExcReportDataWaitingBoss, getExcReportDataWaitingQA, getExcReportDataDone).map((res) => res.reduce((a, b) => a.concat(b)))
     },
     getAdminExcReports(query, reqOption) {
         let Observable = rxjs.Observable;
