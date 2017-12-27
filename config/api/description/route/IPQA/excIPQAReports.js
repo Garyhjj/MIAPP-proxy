@@ -60,7 +60,7 @@ module.exports = {
     DUTY_DEPT?: string;
 }[]`
                 }],
-                tip: '根据类别获得需要处理的报告',
+                tip: '根据角色获得IPQA巡检中需要处理的报告',
                 url_example: '?company_name=MSL&type=boss&empno=FX823'
             }
         ]
