@@ -29,5 +29,11 @@ module.exports = {
         query = query || {};
         let url = replaceQuery(api.getEmployeeSchedule, query);
         return request.get(url,reqOpt).then((res) => JSON.parse(res));
+    },
+
+    getTracProblems(query, reqOpt) {
+        query = query || {};
+        let url = replaceQuery(api.getProblemTrack, query);
+        return request.get(url,reqOpt).then((res) => JSON.parse(res));
     }
 }
