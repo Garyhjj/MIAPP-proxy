@@ -9,6 +9,8 @@ const Router = require('koa-router'),
 equipTipsCollection = require('./share/utils').equipTipsCollection,
     bossReq = require('./share/utils/boss-req/index'),
     IPQAReq = require('./share/utils/IPQA-req/');
+    baseReq = require('./share/utils/baseReq');
+    sortUtils = util.sortUtils;
 
 
 var router = new Router({
@@ -17,11 +19,21 @@ var router = new Router({
 
 router.use(jwtCheck);
 
+router.get('/reportLines', async (ctx) => {
+    const query = ctx.query;
+    res = await baseReq.getLinesById(ctx.query, ctx.miOption);
+    let lines = [];
+    if(res && res.Lines) {
+        lines = res.Lines.sort((a,b) => sortUtils.byTime(a.INSPECT_TIME,b.INSPECT_TIME));
+    }
+    ctx.response.body = lines;
+})
+
 router.get('/tracProblems', async (ctx) => {
     const query = ctx.query;
     const status = query.status;
     res = await bossReq.getTracProblems(ctx.query, ctx.miOption);
-    res = res.filter(c => {
+    res = res && res.filter(c => {
         if(c.PROBLEM_FLAG ==='Y') {
             if(status) {
                 if(c.PROBLEM_STATUS == status) return true;
@@ -31,7 +43,7 @@ router.get('/tracProblems', async (ctx) => {
         }else {
             return false;
         }
-    });
+    }) || [];
     ctx.response.body = res;
 })
 

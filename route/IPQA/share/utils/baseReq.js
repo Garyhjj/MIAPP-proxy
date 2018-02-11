@@ -35,5 +35,11 @@ module.exports = {
         query = query || {};
         let url = replaceQuery(api.getProblemTrack, query);
         return request.get(url,reqOpt).then((res) => JSON.parse(res));
+    },
+
+    getLinesById(query, reqOpt) {
+        query = query || {};
+        let url = replaceQuery(api.getLinesById, query);
+        return request.get(url,reqOpt).then((res) => JSON.parse(res));
     }
 }
