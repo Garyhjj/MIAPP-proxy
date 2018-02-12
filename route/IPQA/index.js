@@ -19,6 +19,12 @@ var router = new Router({
 
 router.use(jwtCheck);
 
+router.get('/attendanceInfo', async (ctx) => {
+    const query = ctx.query;
+    res = await bossReq.getAttendanceInfo(ctx.query, ctx.miOption);
+    ctx.response.body = res;
+})
+
 router.get('/reportLines', async (ctx) => {
     const query = ctx.query;
     res = await baseReq.getLinesById(ctx.query, ctx.miOption);

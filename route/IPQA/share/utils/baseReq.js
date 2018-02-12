@@ -41,5 +41,11 @@ module.exports = {
         query = query || {};
         let url = replaceQuery(api.getLinesById, query);
         return request.get(url,reqOpt).then((res) => JSON.parse(res));
+    },
+
+    getScheduleInfo(query, reqOpt) {
+        query = query || {};
+        let url = replaceQuery(api.getScheduleInfo, query);
+        return request.get(url,reqOpt).then((res) => JSON.parse(res));
     }
 }

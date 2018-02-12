@@ -26,6 +26,7 @@ const isNumber = (num) => {
     return !Number.isNaN(Number(num));
 }
 module.exports = {
+    isArray,
     requestOption,
     isReqError: (res) => (res && typeof res.statusCode === 'number') || (res.name === 'RequestError'),
     handlerError: async (ctx, next) => {

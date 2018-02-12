@@ -7,7 +7,8 @@ const IPQA = {
     getProblemTrack: base.proxy + 'IPQA/GetProblemTrack?nameID={nameID}&dateFM={dateFM}&dateTO={dateTO}&company_name={company_name}&type={type}',
     getEmployeeSchedule: base.proxy + 'IPQA/GetEmployeeSchedule?company={company}',
     getTracProblems: base.proxy + 'IPQA/GetProblemTrack?nameID={nameID}&dateFM={dateFM}&dateTO={dateTO}&company_name={company_name}&type={type}',
-    getLinesById: base.proxy + 'IPQA/GetReport?header_id={header_id}'
+    getLinesById: base.proxy + 'IPQA/GetReport?header_id={header_id}',
+    getScheduleInfo: base.proxy + 'IPQA/GetScheduleInfo?nameID={nameID}&dateFM={dateFM}&dateTO={dateTO}'
 }
 
 module.exports = IPQA;
