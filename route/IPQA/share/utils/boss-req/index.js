@@ -59,5 +59,23 @@ module.exports = {
         } else {
             return []
         }
+    },
+
+    async getCommentInfo(query, reqOption) {
+        let res =  await baseReq.getScheduleInfo(query, reqOption);
+        const type = query.type;
+        if (isArray(res)) {
+            res = res.filter(r => r.HEADER_ID > 0);
+            switch (+type) {
+                case 0:
+                    return res.filter(r => !r.SCORE);
+                case 1:
+                    return res.filter(r => r.SCORE);
+                default:
+                    return res;
+            }
+        } else {
+            return []
+        }
     }
 }

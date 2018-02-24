@@ -19,6 +19,12 @@ var router = new Router({
 
 router.use(jwtCheck);
 
+router.get('/commentInfo', async (ctx) => {
+    const query = ctx.query;
+    res = await bossReq.getCommentInfo(ctx.query, ctx.miOption);
+    ctx.response.body = res;
+})
+
 router.get('/attendanceInfo', async (ctx) => {
     const query = ctx.query;
     res = await bossReq.getAttendanceInfo(ctx.query, ctx.miOption);
