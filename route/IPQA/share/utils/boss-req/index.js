@@ -66,7 +66,7 @@ module.exports = {
         const type = query.type;
         if (isArray(res)) {
             res = res.filter(r => r.HEADER_ID > 0);
-            switch (+type) {
+            switch (type) {
                 case 0:
                     return res.filter(r => !r.SCORE);
                 case 1:
