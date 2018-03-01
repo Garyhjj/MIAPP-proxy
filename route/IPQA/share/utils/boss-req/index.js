@@ -48,11 +48,11 @@ module.exports = {
             const type = query.type;
             switch (+type) {
                 case 1:
-                    return res.filter(r => !r.ACUTAL_FROM_TIME || !r.ACTUAL_TO_TIME);
+                    return res.filter(r => !r.ACUTAL_FROM_TIME || !r.ACTUAL_TO_TIME); // 未刷卡
                 case 2:
-                    return res.filter(r => !r.ACTUAL_HOURS);
+                    return res.filter(r => !r.ACTUAL_HOURS);// 未產生補休
                 case 3:
-                    return res.filter(r => r.ACTUAL_HOURS);
+                    return res.filter(r => r.ACTUAL_HOURS);// 已產生補休
                 default:
                     return res;
             }
@@ -68,9 +68,9 @@ module.exports = {
             res = res.filter(r => r.HEADER_ID > 0);
             switch (type) {
                 case 0:
-                    return res.filter(r => !r.SCORE);
+                    return res.filter(r => !r.SCORE);// 獲得未評分
                 case 1:
-                    return res.filter(r => r.SCORE);
+                    return res.filter(r => r.SCORE);// 獲得已評分
                 default:
                     return res;
             }

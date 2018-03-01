@@ -7,7 +7,9 @@ module.exports = {
             require('./adminTotalTips'),
             require('./ownUndoneReports'),
             require('./excIPQAReports'),
-            require('./tracProblems')
+            require('./tracProblems'),
+            require('./commentInfo'),
+            require('./attendanceInfo')
         ]
     }
 }
