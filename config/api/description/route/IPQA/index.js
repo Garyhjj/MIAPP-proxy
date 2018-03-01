@@ -6,7 +6,10 @@ module.exports = {
         routes:[
             require('./adminTotalTips'),
             require('./ownUndoneReports'),
-            require('./excIPQAReports')
+            require('./excIPQAReports'),
+            require('./tracProblems'),
+            require('./commentInfo'),
+            require('./attendanceInfo')
         ]
     }
 }
