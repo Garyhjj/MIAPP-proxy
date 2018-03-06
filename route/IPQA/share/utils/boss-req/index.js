@@ -66,10 +66,10 @@ module.exports = {
         const type = query.type;
         if (isArray(res)) {
             res = res.filter(r => r.HEADER_ID > 0);
-            switch (type) {
-                case 0:
+            switch (type+'') {
+                case '0':
                     return res.filter(r => !r.SCORE);// 獲得未評分
-                case 1:
+                case '1':
                     return res.filter(r => r.SCORE);// 獲得已評分
                 default:
                     return res;
