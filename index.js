@@ -11,6 +11,9 @@ const koa = require('koa'),
     views = require('koa-views'),
     ejs = require('ejs'),
     static = require('koa-static'),
+    compress = require('koa-compress'),
+    staticCache = require('koa-static-cache'),
+    path = require('path'),
     moment = require('moment');
 const {
     logger
@@ -27,10 +30,21 @@ var app = new koa();
 
 app.use(convert(cors()));
 app.use(koaBody());
+// 中间件 设置gzip
+app.use(compress({
+    threshold: 2048,
+    flush: require("zlib").Z_SYNC_FLUSH
+}))
 app.use(views(__dirname + '/views', {
     extension: 'ejs'
 }));
 app.use(static(__dirname + '/public'));
+// 静态文件服务
+app.use(convert(staticCache(path.join(__dirname, 'public'), {
+    maxAge: 365 * 24 * 60 * 60,
+    dynamic: true
+})))
+
 app.use(prepareReqOption);
 
 if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === 'production') {

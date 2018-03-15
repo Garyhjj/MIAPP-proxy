@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/cce31af92dc06fbd620d48ff55a9904be20ddc61/koa-compress/index.d.ts",
+    "raw": "registry:dt/koa-compress#2.0.0+20161219223325",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/cce31af92dc06fbd620d48ff55a9904be20ddc61/koa-compress/index.d.ts"
+  }
+}
