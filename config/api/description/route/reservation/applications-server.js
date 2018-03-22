@@ -14,6 +14,11 @@ module.exports = {
                         name: 'status',
                         type: 'string类型, New | Processing',
                         canNull: true,
+                    },
+                    {
+                        name: 'deptID',
+                        type: 'number类型， 1',
+                        canNull: true,
                     }
                 ],
                 results:[{
@@ -39,12 +44,10 @@ module.exports = {
     TIME_ID?: number;
     SCORE?: number;
     PROCESS_TIME?: string;
-    images?: string[];
-    actionType?: number;
 }[]`
                 }],
                 tip: '获得服务人员的需要查看的申请表',
-                url_example: '?empno=FX823&status=New'
+                url_example: '?empno=FX823&status=New&deptID=1'
             }
         ]
     }

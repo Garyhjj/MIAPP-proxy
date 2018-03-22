@@ -4,7 +4,8 @@ module.exports = {
     info:{
         prefix: 'reservations',
         routes:[
-            require('./applications-server')
+            require('./applications-server'),
+            require('./applications')
         ]
     }
 }

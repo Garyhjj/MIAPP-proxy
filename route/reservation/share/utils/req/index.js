@@ -22,33 +22,62 @@ module.exports = {
                 const deptIDList = serveList.map(s => s.DEPT_ID);
                 list = list.filter(l => deptIDList.indexOf(l.DEPT_ID) > -1);
             }
+            if(+query.deptID > 0) {
+                list = list.filter(l => +l.DEPT_ID === +query.deptID);
+            }
             let statusList = ['New', 'Processing'];
             return list.filter(l => statusList.indexOf(l.STATUS) > -1);
         }
     },
 
     async updateApplication(query, reqOption) {
-        if (query.ID === 0) {
-            const dayInfos = await baseReq.getServiceDayInfo({dept_id: query.DEPT_ID, date: date});
-            const targetInfo = dayInfos.find(d => d.ID === query.TIME_ID);
+        const status = query.STATUS;
+        if (+query.ID === 0) {
+            const dayInfos = await baseReq.getServiceDayInfo({dept_id: query.DEPT_ID, date: query.SERVICE_DATE}, reqOption);
+            const targetInfo = dayInfos.find(d => d.TIME_ID === query.TIME_ID);
             if(!targetInfo) {
                 return {
-                    status: 400,
+                    statusCode: 400,
                     error: '申请服务失败, 无该时间段'
                 };
             }
             const date = query.SERVICE_DATE;
-            if (!testTime(date, query.END_TIME, deptMes.PRE_MIN_MINUTE)) {
+            if (!testTime(date, query.END_TIME, targetInfo.PRE_MIN_MINUTE)) {
                 return {
-                    status: 400,
+                    statusCode: 400,
                     error: '已超时，申请服务失败'
                 };
             }
             if(+targetInfo.REMAIN_NUMBER < 1) {
                 return {
-                    status: 400,
+                    statusCode: 400,
                     error: '申请服务失败, 无剩余号数'
                 };
+            }
+        }else{
+            if(status === 'Processing') {
+                const apps = await baseReq.getApplications({docno: query.DOCNO}, reqOption);
+                if(apps.length === 0) {
+                    return {
+                        statusCode: 400,
+                        error: '更新的单据不存在'
+                    };
+                }
+                const app = apps[0];
+                const qHandler = query.HANDLER;
+                const sHandler = app.HANDLER;
+                if(!qHandler) {
+                    return {
+                        statusCode: 400,
+                        error: '不能无单据处理人'
+                    };
+                }
+                if(sHandler && sHandler !== qHandler) {
+                    return {
+                        statusCode: 400,
+                        error: '该单据已被人抢了,请刷新'
+                    }
+                }
             }
         }
         return baseReq.updateApplication(query, reqOption);

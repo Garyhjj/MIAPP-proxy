@@ -35,9 +35,19 @@ module.exports = {
     getServiceDayInfo(query, reqOpt) {
         query = query || {};
         let url = replaceQuery(api.getServiceDayInfo, query);
-        return request.get(url, reqOpt);
+        return request.get(url, reqOpt).then((res) => {
+            res = JSON.parse(res);
+            if (!res) res = [];
+            return res
+        });
     },
     updateApplication(data, reqOpt) {
-        return request.post(api.updateApplication, data, reqOpt);
+        return request({
+            uri: api.updateApplication,
+            method: 'POST',
+            headers: reqOpt.headers,
+            body: data,
+            json: true
+        }).then(res => JSON.parse(res));
     }
 }

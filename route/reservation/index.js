@@ -20,4 +20,18 @@ router.get('/applications/server', async (ctx) => {
     ctx.response.body = res;
 })
 
+router.post('/applications', async (ctx) => {
+    const query = ctx.request.body;
+    res = await req.updateApplication(query, ctx.miOption).catch(err => err);
+    if(res.statusCode > 0) {
+        ctx.response.status = res.statusCode;
+        ctx.response.body = res.error;
+    }else if(isErr(res)) {
+        ctx.response.status = 400;
+        ctx.response.body = res.message;
+    }else{
+        ctx.response.body = res;
+    }
+})
+
 module.exports = router;

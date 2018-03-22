@@ -28,7 +28,7 @@ const isNumber = (num) => {
 module.exports = {
     isArray,
     requestOption,
-    isReqError: (res) => (res && typeof res.statusCode === 'number') || (res.name === 'RequestError'),
+    isReqError: (res) => (res && typeof res.statusCode === 'number') || (typeof res.name === 'string' && res.name.indexOf('Error') > -1),
     handlerError: async (ctx, next) => {
         try {
             await next();
