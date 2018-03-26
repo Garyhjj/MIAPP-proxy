@@ -79,7 +79,24 @@ module.exports = {
                     }
                 }
             }
+            
+            if(status === 'Scoring' && Array.isArray(query.newImpressionList)) {
+                newImpressionList = query.newImpressionList;
+                if(newImpressionList.length > 0) {
+                    const req = [];
+                    newImpressionList.forEach(i => {
+                        req.push(baseReq.updateImpression({
+                            ID: 0,
+                            SERVICE_ID: query.ID,
+                            IMPRESSION_ID: i,
+                            EMPNO: query.HANDLER
+                        }, reqOption))
+                    });
+                    await Promise.all(req);
+                }
+            }
         }
+        delete query.newImpressionList;
         return baseReq.updateApplication(query, reqOption);
     }
 }

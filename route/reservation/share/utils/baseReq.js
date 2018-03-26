@@ -49,5 +49,15 @@ module.exports = {
             body: data,
             json: true
         }).then(res => JSON.parse(res));
+    },
+
+    updateImpression(data, reqOpt) {
+        return request({
+            uri: api.updateImpression,
+            method: 'POST',
+            headers: reqOpt.headers,
+            body: data,
+            json: true
+        }).then(res => JSON.parse(res));
     }
 }

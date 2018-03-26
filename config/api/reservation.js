@@ -5,7 +5,8 @@ const reservation = {
     getPersonList: base.proxy + 'Service/GetServicePersons?dept_id={dept_id}',
     getDeptMes: base.proxy + 'Service/GetServiceDepartments?dept_no={dept_no}&company_id={company_id}',
     getServiceDayInfo: base.proxy + 'Service/GetServiceInfo?dept_id={dept_id}&date={date}',
-    updateApplication: base.proxy + 'Service/UpdateSrvice'
+    updateApplication: base.proxy + 'Service/UpdateSrvice',
+    updateImpression: base.proxy + 'Service/UpdateServiceResult'
 }
 
 module.exports = reservation;
