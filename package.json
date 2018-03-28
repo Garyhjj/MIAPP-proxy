@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "serve": "set NODE_ENV=production && pm2 start index.js --name='miapp-proxy'",
+    "serve:dev": "set NODE_ENV=development && pm2 start index.js --name='miapp-proxy'",
     "update": "git pull origin master && npm i && set NODE_ENV=production && pm2 reload 'miapp-proxy'",
+    "update:dev": "git pull origin master && npm i && set NODE_ENV=development && pm2 reload 'miapp-proxy'",
     "kill": "pm2 delete 'miapp-proxy'",
     "dev": "set NODE_ENV=development && nodemon index.js"
   },

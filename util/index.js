@@ -86,5 +86,8 @@ module.exports = {
             const res = Number(a) - Number(b);
             return isAscend ? res : -res;
         }
+    },
+    isProduction() {
+        return process.env.NODE_ENV && process.env.NODE_ENV.trim() === 'production';
     }
 }
