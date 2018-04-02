@@ -17,7 +17,7 @@ class ReservationTipsCollection extends TipsCollection {
         const body = ctx.request.body,
             empno = body.empno,
             miOption = ctx.miOption;
-        const userTip = await Promise.all([this.getScoringTip(empno, miOption), this.getProcessingTip(empno, miOption)]).then(list => list.reduce((a, b) => a + b, 0));
+        const userTip = await Promise.all([this.getScoringTip(empno, miOption), this.getProcessingTip(empno, miOption), this.getSelfNewTip(empno, miOption)]).then(list => list.reduce((a, b) => a + b, 0));
         let a = await topBaseReq.getPrivilege(this.id, miOption).catch((err) => err);
         let adminTip = 0;
         if (!isErr(a)) {
@@ -44,7 +44,12 @@ class ReservationTipsCollection extends TipsCollection {
         }
         return false;
     }
-
+    async getSelfNewTip(person, reqOpt) {
+        return baseReq.getApplications({
+            contact: person,
+            status: 'New'
+        }, reqOpt).then(l => l.length);
+    }
     async getScoringTip(person, reqOpt) {
         return baseReq.getApplications({
             contact: person,
