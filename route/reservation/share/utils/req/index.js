@@ -26,7 +26,17 @@ module.exports = {
                 list = list.filter(l => +l.DEPT_ID === +query.deptID);
             }
             let statusList = ['New', 'Processing'];
-            return list.filter(l => statusList.indexOf(l.STATUS) > -1);
+            return list.filter(l => {
+                if (statusList.indexOf(l.STATUS) > -1) {
+                    if (l.STATUS === 'Processing') {
+                        if (l.HANDLER !== query.empno) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            });
         }
     },
 
