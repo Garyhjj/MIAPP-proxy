@@ -15,7 +15,7 @@ class IPQATipsCollection extends TipsCollection {
     }
 
     async getNewTips(ctx, ids) {
-        let oriRes = Promise.resolve(new ModuleTip(this.id,0));
+        let oriRes = Promise.resolve(new ModuleTip(this.id, 0));
         if (!ids) {
             let a = await topBaseReq.getPrivilege(this.id, ctx.miOption).catch((err) => err);
             if (!isErr(a)) {
@@ -27,16 +27,17 @@ class IPQATipsCollection extends TipsCollection {
                 let req = [];
                 this.subTipsCollection.forEach((s) => {
                     if (this.hasPrivilege(s.id)) {
-                        req.push(s.getNewTips(ctx,this.privilegeList));
+                        req.push(s.getNewTips(ctx, this.privilegeList));
                     }
                 })
                 return Promise.all(req).then((res) => {
                     let tips = 0;
                     res.forEach((r) => {
-                        let t = r || 0;
-                        tips +=t;
+                        let t = r instanceof ModuleTip && r.TIPS || 0;
+                        t = Number.isNaN(+t) ? 0 : t;
+                        tips += t;
                     })
-                    return new ModuleTip(this.id,tips)
+                    return new ModuleTip(this.id, tips, res)
                 })
             } else {
                 return oriRes
@@ -59,4 +60,4 @@ class IPQATipsCollection extends TipsCollection {
 
 }
 
-module.exports = new IPQATipsCollection(new getBossTips(),new getEquipTips(),new getIPQATips());
+module.exports = new IPQATipsCollection(new getBossTips(), new getEquipTips(), new getIPQATips());

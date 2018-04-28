@@ -7,6 +7,8 @@ const topUtils = require('../../../../util/');
 const getRole = topUtils.getRole;
 const isErr = require('../../../../util/').isReqError;
 const moment = require('moment');
+const ModuleTip = require('../../../share/models/').ModuleTip;
+
 class BossTipsCollection extends TipsCollection {
     constructor() {
         super();
@@ -14,28 +16,36 @@ class BossTipsCollection extends TipsCollection {
     }
 
     async getNewTips(ctx, list) {
-        let role = getRole(list,this.id);
-        return Promise.all([this.getOwnUndoneTips(ctx), this.getAdminTotalTips(ctx,{role}),this.getOwnTaskTips(ctx)]).then((res) => res.reduce((a, b) => a + b, 0));
+        let role = getRole(list, this.id);
+        return Promise.all([this.getOwnUndoneTips(ctx), this.getAdminTotalTips(ctx, {
+            role
+        }), this.getOwnTaskTips(ctx)]).then((res) => new ModuleTip(this.id, res.map(r => r && r.TIPS || 0).reduce((a, b) => a + b, 0), res));
     }
 
     getOwnUndoneTips(ctx) {
         let query = ctx.request.body;
-        let send = {type:this.id};
-        Object.assign(send,query);
+        let send = {
+            type: this.id
+        };
+        Object.assign(send, query);
         let option = ctx.miOption;
-        return bossReq.getOwnUndoneReport(send, option).map((a) => a.length).toPromise();
+        return bossReq.getOwnUndoneReport(send, option).map((a) => new ModuleTip('ownUndoneTips', a.length)).toPromise();
     }
 
     async getOwnTaskTips(ctx) {
         let query = ctx.request.body;
-        return rxjs.Observable.fromPromise(baseReq.getEmployeeSchedule({company:query.company_name},ctx.miOption)).map((d) => d.filter((l) => +l.REPORT_ID === 0).length).toPromise();
+        return rxjs.Observable.fromPromise(baseReq.getEmployeeSchedule({
+            company: query.company_name
+        }, ctx.miOption)).map((d) => new ModuleTip('ownTaskTips', d.filter((l) => +l.REPORT_ID === 0).length)).toPromise();
     }
     async getAdminTotalTips(ctx, opts) {
         let myOpt = opts || {};
         let role = opts.role;
-        if (!role || role === 3) return Promise.resolve(0);
+        const tipName = 'adminTotalTips';
+        const zero = new ModuleTip(tipName, 0);
+        if (!role || role === 3) return zero;
         let query = ctx.request.body || {};
-        Object.assign(query,opts);
+        Object.assign(query, opts);
         let company_name = query.company_name;
         let miOption = ctx.miOption;
         let mriL = await baseReq.getMriName({
@@ -43,7 +53,7 @@ class BossTipsCollection extends TipsCollection {
             company_name: company_name
         }, miOption).catch((err) => err);
         if (isErr(mriL) || mriL.length === 0) {
-            return Promise.resolve(0);
+            return zero;
         } else {
             if (role !== 1) {
                 mriL = mriL.filter((l) => l.ADMIN_EMPNO === query.empno);
@@ -61,9 +71,9 @@ class BossTipsCollection extends TipsCollection {
                 req.push(rxjs.Observable.fromPromise(baseReq.getProblemTrack(trackQuery, miOption)).map((list) => list ? list : []))
             })
             return rxjs.Observable.forkJoin(...req).map((res) => {
-                return res.map((list) => {
+                return new ModuleTip(tipName, res.map((list) => {
                     return list.filter((i) => i.PROBLEM_FLAG === 'Y' && i.PROBLEM_STATUS === 'New')
-                }).map((l) => l.length).reduce((a, b) => a + b, 0)
+                }).map((l) => l.length).reduce((a, b) => a + b, 0));
             }).toPromise();
         }
     }

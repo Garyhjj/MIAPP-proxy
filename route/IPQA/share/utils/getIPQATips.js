@@ -6,6 +6,7 @@ const baseReq = require('./baseReq');
 const topUtils = require('../../../../util/');
 const getRole = topUtils.getRole;
 const isErr = require('../../../../util/').isReqError;
+const ModuleTip = require('../../../share/models/').ModuleTip;
 class IPQATipsCollection extends TipsCollection {
     constructor() {
         super();
@@ -13,14 +14,18 @@ class IPQATipsCollection extends TipsCollection {
     }
 
     async getNewTips(ctx, list) {
-        let role = getRole(list,this.id);
+        let role = getRole(list, this.id);
         let res;
-        if(role === 1) {
-            res = await IPQAReq.getAdminExcReports(Object.assign({type:this.id},ctx.request.body),ctx.miOption).map((ls) => ls.length).toPromise();
+        if (role === 1) {
+            res = await IPQAReq.getAdminExcReports(Object.assign({
+                type: this.id
+            }, ctx.request.body), ctx.miOption).map((ls) => ls.length).toPromise();
         } else {
-            res = await IPQAReq.getNormalExcReports(Object.assign({type:this.id},ctx.request.body),ctx.miOption).map((ls) => ls.length).toPromise();
+            res = await IPQAReq.getNormalExcReports(Object.assign({
+                type: this.id
+            }, ctx.request.body), ctx.miOption).map((ls) => ls.length).toPromise();
         }
-        return Promise.resolve(res);
+        return new ModuleTip(this.id, res);
     }
 }
 

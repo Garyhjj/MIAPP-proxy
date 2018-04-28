@@ -28,24 +28,24 @@ module.exports = {
     getEmployeeSchedule(query, reqOpt) {
         query = query || {};
         let url = replaceQuery(api.getEmployeeSchedule, query);
-        return request.get(url,reqOpt).then((res) => JSON.parse(res));
+        return request.get(url, reqOpt).then((res) => JSON.parse(res));
     },
 
     getTracProblems(query, reqOpt) {
         query = query || {};
         let url = replaceQuery(api.getProblemTrack, query);
-        return request.get(url,reqOpt).then((res) => JSON.parse(res));
+        return request.get(url, reqOpt).then((res) => JSON.parse(res));
     },
 
     getLinesById(query, reqOpt) {
         query = query || {};
         let url = replaceQuery(api.getLinesById, query);
-        return request.get(url,reqOpt).then((res) => JSON.parse(res));
+        return request.get(url, reqOpt).then((res) => JSON.parse(res));
     },
 
     getScheduleInfo(query, reqOpt) {
         query = query || {};
         let url = replaceQuery(api.getScheduleInfo, query);
-        return request.get(url,reqOpt).then((res) => JSON.parse(res));
+        return request.get(url, reqOpt).then((res) => JSON.parse(res));
     }
 }

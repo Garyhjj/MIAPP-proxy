@@ -1,28 +1,26 @@
-const koa = require('koa'),
-    proxy = require('koa-proxy'),
-    convert = require('koa-convert'),
-    koaBody = require('koa-body'),
-    http = require('http'),
-    https = require('https'),
-    cors = require('koa-cors'),
-    winston = require('winston'),
-    enforceHttps = require('koa-sslify'),
-    fs = require('fs'),
-    views = require('koa-views'),
-    ejs = require('ejs'),
-    static = require('koa-static'),
-    compress = require('koa-compress'),
-    staticCache = require('koa-static-cache'),
-    path = require('path'),
-    moment = require('moment');
-const {
-    logger
-} = require('koa2-winston');
+const koa = require("koa"),
+  proxy = require("koa-proxy"),
+  convert = require("koa-convert"),
+  koaBody = require("koa-body"),
+  http = require("http"),
+  https = require("https"),
+  cors = require("koa-cors"),
+  winston = require("winston"),
+  enforceHttps = require("koa-sslify"),
+  fs = require("fs"),
+  views = require("koa-views"),
+  ejs = require("ejs"),
+  static = require("koa-static"),
+  compress = require("koa-compress"),
+  staticCache = require("koa-static-cache"),
+  path = require("path"),
+  moment = require("moment");
+const { logger } = require("koa2-winston");
 
-const route = require('./route');
-const config = require('./config').base;
-const handleError = require('./util/').handlerError;
-const prepareReqOption = require('./middlewares/').prepareReqOption;
+const route = require("./route");
+const config = require("./config").base;
+const handleError = require("./util/").handlerError;
+const prepareReqOption = require("./middlewares/").prepareReqOption;
 
 var app = new koa();
 
@@ -31,62 +29,62 @@ var app = new koa();
 app.use(convert(cors()));
 app.use(koaBody());
 // 中间件 设置gzip
-app.use(compress({
+app.use(
+  compress({
     threshold: 2048,
     flush: require("zlib").Z_SYNC_FLUSH
-}))
-app.use(views(__dirname + '/views', {
-    extension: 'ejs'
-}));
-app.use(static(__dirname + '/public'));
+  })
+);
+app.use(
+  views(__dirname + "/views", {
+    extension: "ejs"
+  })
+);
+app.use(static(__dirname + "/public"));
 // 静态文件服务
-app.use(convert(staticCache(path.join(__dirname, 'public'), {
-    maxAge: 365 * 24 * 60 * 60,
-    dynamic: true
-})))
+app.use(
+  convert(
+    staticCache(path.join(__dirname, "public"), {
+      maxAge: 365 * 24 * 60 * 60,
+      dynamic: true
+    })
+  )
+);
 
 app.use(prepareReqOption);
 
-if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === 'production') {
-    // 正常请求日志
-    app.use(logger({
-        transports: [
-            new(winston.transports.Console)({
-                json: true,
-                colorize: true
-            }),
-            new winston.transports.File({
-                filename: `logs/success/${moment(new Date()).format('YYYYMMDD')}.log`
-            })
-        ]
-    }))
-
-    // 错误请求日志
-    app.use(logger({
-        transports: [
-            new winston.transports.Console({
-                json: true,
-                colorize: true
-            }),
-            new winston.transports.File({
-                filename: `logs/error/${moment(new Date()).format('YYYYMMDD')}.log`
-            })
-        ]
-    }))
-
-    app.use(handleError);
+if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === "production") {
+  // 所有请求日志
+  app.use(
+    logger({
+      transports: [
+        new winston.transports.Console({
+          json: true,
+          colorize: true
+        }),
+        new winston.transports.File({
+          filename: `logs/success/${moment(new Date()).format("YYYYMMDD")}.log`
+        })
+      ],
+      level: "info"
+    })
+  );
+  app.use(handleError);
 }
-
 
 route(app);
 
-app.use(convert(proxy({
-    host: config.proxy
-})));
+app.use(
+  convert(
+    proxy({
+      host: config.proxy
+    })
+  )
+);
 
 const options = {
-    key: fs.readFileSync('./ssl/server.key'), //ssl文件路径
-    cert: fs.readFileSync('./ssl/server.pem') //ssl文件路径
+  key: fs.readFileSync("./ssl/server.key"), //ssl文件路径
+  cert: fs.readFileSync("./ssl/server.pem") //ssl文件路径
 };
 
 http.createServer(app.callback()).listen(config.httpPort);
