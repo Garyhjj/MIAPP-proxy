@@ -1,8 +1,7 @@
 const request = require("request-promise-native");
 const api = require("../../../../config/api/reservation"),
   util = require("../../../../util/"),
-  replaceQuery = util.replaceQuery,
-  updateWithLock = util.updateStoreWithLockResolve("reservation", "ID");
+  replaceQuery = util.replaceQuery;
 
 module.exports = {
   getApplications: function(query, reqOpt) {
@@ -44,23 +43,15 @@ module.exports = {
     });
   },
   updateApplication(data, reqOpt) {
-    return updateWithLock.update(
-      ds =>
-        new Promise(r =>
-          setTimeout(_ => {
-            request({
-              uri: api.updateApplication,
-              method: "POST",
-              headers: reqOpt.headers,
-              body: ds,
-              json: true
-            }).then(res => {
-              r(JSON.parse(res));
-            });
-          }, 1000)
-        ),
-      data
-    );
+    return request({
+      uri: api.updateApplication,
+      method: "POST",
+      headers: reqOpt.headers,
+      body: ds,
+      json: true
+    }).then(res => {
+      r(JSON.parse(res));
+    });
   },
 
   updateImpression(data, reqOpt) {
