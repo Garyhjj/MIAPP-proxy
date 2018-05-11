@@ -99,4 +99,68 @@ router.get("/excIPQAReports", async ctx => {
   ctx.response.body = res;
 });
 
+// router.post("/GetHeaderLinesReport", async ctx => {
+//   const result = await IPQAReq.GetHeaderLinesReport(
+//     ctx.request.body,
+//     ctx.miOption
+//   );
+//   ctx.response.body = result;
+// });
+
+router.post("/UploadReport", async ctx => {
+  let result;
+  const body = ctx.request.body;
+  if (body.Header.TYPE === "IPQA") {
+    //如果header等于0，则重新验证是否已经存在当前的巡检记录
+    if (body.Header && body.Lines.length > 0 && body.Header.HEADER_ID === 0) {
+      let obj = {
+        COMPANY_NAME: body.Header.COMPANY_NAME,
+        DUTY_KIND: body.Header.DUTY_KIND,
+        EMPNO: body.Header.INSPECTOR,
+        INSPECT_DATE: body.Header.INSPECT_DATE,
+        LOCATION: body.Lines[0].LOCATION,
+        TYPE: "IPQA"
+      };
+      let headerId = await IPQAReq.GetHeaderLinesReport(
+        //ctx.request.body,
+        obj,
+        ctx.miOption
+      );
+      // 如果检查到header不等于0，以这个headerid为准
+      if (headerId > 0) {
+        body.Header.HEADER_ID = headerId;
+
+        let existedData = await IPQAReq.getReportData(headerId, ctx.miOption);
+
+        for (let i = 0; i < body.Lines.length; i++) {
+          // body.Lines[i].HEADER_ID = headerId;
+          let line = existedData.Lines.find(
+            data => data.CHECK_ID === body.Lines[i].CHECK_ID
+          );
+          if (line) {
+            body.Lines[i].HEADER_ID = headerId;
+            body.Lines[i].LINE_ID = line.LINE_ID;
+            if (
+              body.Lines[i].CHECK_RESULT === "NORMAL" ||
+              body.Lines[i].CHECK_RESULT === "N/A"
+            ) {
+              body.Lines[i].PROBLEM_DESC = "";
+              body.Lines[i].PROBLEM_FLAG = "N";
+              body.Lines[i].NUM = "";
+            }
+          }
+        }
+        result = await IPQAReq.UploadReport(body, ctx.miOption);
+      } else {
+        result = await IPQAReq.UploadReport(ctx.request.body, ctx.miOption);
+      }
+    } else {
+      result = await IPQAReq.UploadReport(ctx.request.body, ctx.miOption);
+    }
+  } else {
+    result = await IPQAReq.UploadReport(ctx.request.body, ctx.miOption);
+  }
+  ctx.response.body = result;
+});
+
 module.exports = router;

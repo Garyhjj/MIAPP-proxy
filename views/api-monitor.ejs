@@ -1,0 +1,45 @@
+<%- include('header') %>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <table class="table table-striped">
+                    <caption>访问统计</caption>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>api</th>
+                            <th>访问次数</th>
+                            <th>平均耗时(毫秒)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% 
+                                for(var i=0,lg = statistics.length ;i<lg;i++){
+                                    var target = statistics[i];
+                                        %>
+                            <tr>
+                                <th scope="row">
+                                    <%= i+1 %>
+                                </th>
+                                <td>
+                                    <%= target.name %>
+                                </td>
+                                <td>
+                                    <%= target.count %>
+                                </td>
+                                <td>
+                                    <%= target.averageTime %>
+                                </td>
+                            </tr>
+                            <% }%>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+    <%- include('footer') %>

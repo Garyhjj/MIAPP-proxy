@@ -9,20 +9,46 @@ class UpdateStoreWithLock {
     this.updatingList = {};
     this.waitingList = [];
     this.timeID = null;
+    this._outTime = 1000 * 60;
   }
-
+  setOutTime(n) {
+    if (typeof n === "number") {
+      this._outTime = n;
+    }
+  }
   doUpdate() {
     if (this.waitingList.length > 0) {
       const req = this.waitingList.shift();
-      const key = req.key;
-      if (this.updatingList.hasOwnProperty(key)) {
-        this.waitingList.push(req);
+      const { key, data } = req;
+      if (this.isUniquekeyValid(data)) {
+        const nowTime = new Date().getTime();
+        if (
+          this.updatingList.hasOwnProperty(key) &&
+          nowTime - this.updatingList[key] < this._outTime
+        ) {
+          this.waitingList.push(req);
+        } else {
+          this.updatingList[key] = nowTime;
+          req
+            .fn(data)
+            .then(res => {
+              delete this.updatingList[key];
+              req.resolve(res);
+            })
+            .catch(err => {
+              delete this.updatingList[key];
+              req.reject(err);
+            });
+        }
       } else {
-        this.updatingList[key] = true;
-        req.fn(req.data).then(res => {
-          delete this.updatingList[key];
-          req.resolve(res);
-        });
+        req
+          .fn(data)
+          .then(res => {
+            req.resolve(res);
+          })
+          .catch(err => {
+            req.reject(err);
+          });
       }
     } else {
       this.timeID = null;
@@ -34,13 +60,14 @@ class UpdateStoreWithLock {
     if (!this._isDataValid(data)) {
       return Promise.reject("invalid data");
     } else {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         const key = data[this.uniqueKey];
         this.waitingList.push({
-          fn: fn,
-          data: data,
-          key: key,
-          resolve: resolve
+          fn,
+          data,
+          key,
+          resolve,
+          reject
         });
         setTimeout(() => {
           if (!this.timeID) {
@@ -62,7 +89,7 @@ class UpdateStoreWithLock {
   }
 }
 
-function updateStoreWithLockResolve(name, uniqueKey) {
+function updateStoreWithLockResolver(name, uniqueKey) {
   storeList = storeList || [];
   const store = storeList.find(
     s => s.name === name && s.uniqueKey === uniqueKey
@@ -77,5 +104,5 @@ function updateStoreWithLockResolve(name, uniqueKey) {
 }
 
 module.exports = {
-  updateStoreWithLockResolve
+  updateStoreWithLockResolver
 };

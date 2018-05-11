@@ -2,8 +2,9 @@ const requestOption = require("./requestOption");
 const fs = require("fs");
 const moment = require("moment"),
   winston = require("winston"),
-  updateStoreWithLockResolve = require("./updateStoreWithLock")
-    .updateStoreWithLockResolve;
+  updateStoreWithLockResolver = require("./updateStoreWithLock")
+  .updateStoreWithLockResolver,
+  requestTime = require('./requestTime');
 const logger = new winston.Logger({
   transports: [
     new winston.transports.Console({
@@ -17,7 +18,7 @@ const logger = new winston.Logger({
   level: "error"
 });
 
-const isModuleAdmin = function(privilege, type) {
+const isModuleAdmin = function (privilege, type) {
   if (privilege === void 0) return false;
   if (type === void 0) return false;
   if (!(privilege instanceof Array)) return false;
@@ -26,7 +27,7 @@ const isModuleAdmin = function(privilege, type) {
     .find(l => l.FUNCTION_URL === "CheckProblem");
 };
 
-const isSuperUser = function(privilege, type) {
+const isSuperUser = function (privilege, type) {
   if (privilege === void 0) return false;
   if (type === void 0) return false;
   if (!(privilege instanceof Array)) return false;
@@ -46,12 +47,18 @@ const isNumber = num => {
 const isReqError = res =>
   (res && typeof res.statusCode === "number") ||
   (typeof res.name === "string" && res.name.indexOf("Error") > -1);
-
+const assert = (s, m) => {
+  if (!s) {
+    throw new Error(m);
+  }
+};
 module.exports = {
   isArray,
   requestOption,
   isReqError,
-  updateStoreWithLockResolve,
+  updateStoreWithLockResolver,
+  assert,
+  requestTime,
   handlerError: async (ctx, next) => {
     try {
       await next();
@@ -75,7 +82,7 @@ module.exports = {
       ctx.response.body = err.error || err.message;
     }
   },
-  replaceQuery: function(url, query) {
+  replaceQuery: function (url, query) {
     for (let prop in query) {
       url = url.replace(`{${prop}}`, query[prop]);
     }

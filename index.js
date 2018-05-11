@@ -15,17 +15,23 @@ const koa = require("koa"),
   staticCache = require("koa-static-cache"),
   path = require("path"),
   moment = require("moment");
-const { logger } = require("koa2-winston");
+const {
+  logger
+} = require("koa2-winston");
 
 const route = require("./route");
 const config = require("./config").base;
-const handleError = require("./util/").handlerError;
-const prepareReqOption = require("./middlewares/").prepareReqOption;
+const util = require("./util/");
+const handleError = util.handlerError;
+const {
+  prepareReqOption,
+  recordTime
+} = require("./middlewares/");
 
 var app = new koa();
 
 // app.use(enforceHttps());
-
+app.use(recordTime);
 app.use(convert(cors()));
 app.use(koaBody());
 // 中间件 设置gzip
