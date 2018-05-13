@@ -1,11 +1,12 @@
 const moment = require('moment');
 
 const dateFormat = 'YYYYMMDD';
-class RequestTime {
+class RequestMonitor {
     constructor() {
         this.requestCount = Object.create(null);
         this.requestAverageTime = Object.create(null);
         this.requestTimeRange = Object.create(null);
+        this.userList = new Set();
         this.date = moment().format(dateFormat);
     }
 
@@ -22,6 +23,12 @@ class RequestTime {
                 this.requestAverageTime[path] = during;
             }
         }
+    }
+    updateUserList(userID) {
+        this.userList.add(userID);
+    }
+    getUserList() {
+        return Array.from(this.userList);
     }
     getStatisticsByAPI() {
         const count = this.requestCount;
@@ -51,29 +58,43 @@ class RequestTime {
 
 const requestTimeList = []
 
-function requestTimeFactory() {
+function requestMonitorFactory() {
 
 }
-requestTimeFactory.updateTime = function (path, during) {
+requestMonitorFactory.updateTime = function (path, during) {
     const old = requestTimeList.find(r => r.date === moment().format(dateFormat));
     if (old) {
         old.updateTime(path, during);
     } else {
-        const newOne = new RequestTime();
+        const newOne = new RequestMonitor();
         requestTimeList.unshift(newOne);
         newOne.updateTime(path, during);
     }
 }
-requestTimeFactory.searchRequestTimeByDate = function (date) {
+requestMonitorFactory.searchRequestMonitorByDate = function (date) {
     date = date || moment().format(dateFormat);
     return requestTimeList.find(r => r.date === date);
 }
-requestTimeFactory.getStatisticsByAPI = function (date) {
-    const target = this.searchRequestTimeByDate(date);
+requestMonitorFactory.getStatisticsByAPI = function (date) {
+    const target = this.searchRequestMonitorByDate(date);
     return target ? target.getStatisticsByAPI() : [];
 }
-requestTimeFactory.getStatisticsByTime = function (date) {
-    const target = this.searchRequestTimeByDate(date);
-    return target ? target.getStatisticsByAPI() : [];
+requestMonitorFactory.getStatisticsByTime = function (date) {
+    const target = this.searchRequestMonitorByDate(date);
+    return target ? target.getStatisticsByTime() : [];
 }
-module.exports = requestTimeFactory;
+requestMonitorFactory.getUserList = function (date) {
+    const target = this.searchRequestMonitorByDate(date);
+    return target ? target.getUserList() : [];
+}
+requestMonitorFactory.updateUserList = function (userID) {
+    const old = requestTimeList.find(r => r.date === moment().format(dateFormat));
+    if (old) {
+        old.updateUserList(userID);
+    } else {
+        const newOne = new RequestMonitor();
+        requestTimeList.unshift(newOne);
+        newOne.updateUserList(userID);
+    }
+}
+module.exports = requestMonitorFactory;

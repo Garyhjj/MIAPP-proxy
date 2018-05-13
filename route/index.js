@@ -2,8 +2,8 @@ const Router = require("koa-router"),
   IPQA_route = require("./IPQA/"),
   user_route = require("./users/"),
   api_route = require("./nodeAPI/"),
-  reservation_route = require("./reservation/"),
-  util = require("./utils/");
+  reservation_route = require("./reservation/");
+  // util = require("./utils/");
 function route(app) {
   const addRoute = (route, app) =>
     app.use(route.routes()).use(route.allowedMethods());
@@ -12,7 +12,7 @@ function route(app) {
   addRoute(user_route, app);
   addRoute(api_route, app);
   addRoute(reservation_route, app);
-  addRoute(util, app);
+  // addRoute(util, app);
 }
 
 module.exports = route;

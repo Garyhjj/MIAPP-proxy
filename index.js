@@ -25,13 +25,13 @@ const util = require("./util/");
 const handleError = util.handlerError;
 const {
   prepareReqOption,
-  recordTime
+  recordRequestDetial
 } = require("./middlewares/");
 
 var app = new koa();
 
 // app.use(enforceHttps());
-app.use(recordTime);
+app.use(recordRequestDetial);
 app.use(convert(cors()));
 app.use(koaBody());
 // 中间件 设置gzip

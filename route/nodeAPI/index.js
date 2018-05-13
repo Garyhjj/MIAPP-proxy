@@ -4,8 +4,9 @@ const Router = require('koa-router'),
     util = require('../../util'),
     reqOption = util.requestOption,
     isErr = util.isReqError,
-    requestTime = util.requestTime;
-des = require('../../config/api/description/')
+    requestMonitor = util.requestMonitor,
+    des = require('../../config/api/description/'),
+    moment = require('moment');
 
 var router = new Router({
     prefix: '/nodeAPI'
@@ -52,12 +53,35 @@ router.get('/details', async (ctx) => {
 })
 
 router.get('/monitors', async ctx => {
-    const date = ctx.query.date;
-    let statistics = requestTime.getStatisticsByAPI(date);
+    const format = 'YYYYMMDD';
+    const date = ctx.query.date || moment().format(format);
+    let statistics = requestMonitor.getStatisticsByAPI(date);
     statistics.sort((a, b) => b.averageTime - a.averageTime);
+    const userList = requestMonitor.getUserList(date);
+    const dateMoment = moment(date,format);
+    const yesterday = dateMoment.clone().subtract(1,'days').format(format);
+    const tomorrow = dateMoment.clone().add(1,'days').format(format);
+    const statisticsByTime = requestMonitor.getStatisticsByTime(date);
+    const isNow = moment().format(format) === date;
+    console.log(isNow);
+    const countByTime = (() => {
+        let l = [];
+        for(let i=0;i<24;i++) {
+            const h = i<10? '0'+i: i+ '';
+            const data = statisticsByTime.find(s => s.hour === h);
+            l.push(data? data.count: 0);
+        }
+        return l;
+    })()
     await ctx.render('api-monitor.ejs', {
         routeName: 'monitors',
-        statistics
+        statistics,
+        yesterday,
+        tomorrow,
+        date,
+        userListLength: userList.length,
+        statisticsByTime: JSON.stringify(countByTime),
+        isNow
     });
 })
 

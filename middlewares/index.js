@@ -1,13 +1,13 @@
 const jwtCheck = require('./jwtCheck');
 const requestOption = require('../util/requestOption'),
-    requestTime = require('../util').requestTime;
+    requestMonitor = require('../util').requestMonitor;
 module.exports = {
     jwtCheck,
     prepareReqOption: (ctx, next) => {
         ctx.miOption = requestOption(ctx);
         return next();
     },
-    recordTime: async (ctx, next) => {
+    recordRequestDetial: async (ctx, next) => {
         let {
             path,
             method
@@ -18,6 +18,9 @@ module.exports = {
         path = path.split('?')[0];
         ctx.beginPathTime = new Date().getTime();
         await next();
-        requestTime.updateTime(method + ': ' + path, new Date().getTime() - ctx.beginPathTime);
+        requestMonitor.updateTime(method + ': ' + path, new Date().getTime() - ctx.beginPathTime);
+        if(typeof ctx.miUser === 'object' && ctx.miUser.UserID) {
+            requestMonitor.updateUserList(ctx.miUser.UserID);
+        }
     }
 }

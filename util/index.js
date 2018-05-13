@@ -4,7 +4,7 @@ const moment = require("moment"),
   winston = require("winston"),
   updateStoreWithLockResolver = require("./updateStoreWithLock")
   .updateStoreWithLockResolver,
-  requestTime = require('./requestTime');
+  requestMonitor = require('./requestTime');
 const logger = new winston.Logger({
   transports: [
     new winston.transports.Console({
@@ -58,7 +58,7 @@ module.exports = {
   isReqError,
   updateStoreWithLockResolver,
   assert,
-  requestTime,
+  requestMonitor,
   handlerError: async (ctx, next) => {
     try {
       await next();
