@@ -63,7 +63,6 @@ router.get('/monitors', async ctx => {
     const tomorrow = dateMoment.clone().add(1,'days').format(format);
     const statisticsByTime = requestMonitor.getStatisticsByTime(date);
     const isNow = moment().format(format) === date;
-    console.log(isNow);
     const countByTime = (() => {
         let l = [];
         for(let i=0;i<24;i++) {
