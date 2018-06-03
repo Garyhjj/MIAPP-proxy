@@ -7,8 +7,8 @@ const Router = require("koa-router"),
   jwtCheck = require("../../middlewares/").jwtCheck,
   bossTipsCollection = require("./share/utils").bossTipsCollection;
 (equipTipsCollection = require("./share/utils").equipTipsCollection),
-  (bossReq = require("./share/utils/boss-req/index")),
-  (IPQAReq = require("./share/utils/IPQA-req/"));
+(bossReq = require("./share/utils/boss-req/index")),
+(IPQAReq = require("./share/utils/IPQA-req/"));
 baseReq = require("./share/utils/baseReq");
 sortUtils = util.sortUtils;
 
@@ -58,8 +58,7 @@ router.get("/tracProblems", async ctx => {
         } else {
           return false;
         }
-      })) ||
-    [];
+      })) || [];
   ctx.response.body = res;
 });
 
@@ -161,6 +160,25 @@ router.post("/UploadReport", async ctx => {
     result = await IPQAReq.UploadReport(ctx.request.body, ctx.miOption);
   }
   ctx.response.body = result;
+});
+
+router.post("/UploadMachineHdr", async ctx => {
+  const body = ctx.request.body;
+  let res;
+  if (Array.isArray(body)) {
+    res = await Promise.all(body.map(q => baseReq.uploadMachineHdr(q, ctx.miOption))).catch(err => err);
+  } else {
+    res = await baseReq.uploadMachineHdr(body, ctx.miOption).catch(err => err);
+  }
+  if (res.statusCode > 0) {
+    ctx.response.status = res.statusCode;
+    ctx.response.body = res.error;
+  } else if (isErr(res)) {
+    ctx.response.status = 400;
+    ctx.response.body = res.message;
+  } else {
+    ctx.response.body = res;
+  }
 });
 
 module.exports = router;

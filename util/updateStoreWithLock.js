@@ -19,8 +19,11 @@ class UpdateStoreWithLock {
   doUpdate() {
     if (this.waitingList.length > 0) {
       const req = this.waitingList.shift();
-      const { key, data } = req;
-      if (this.isUniquekeyValid(data)) {
+      const {
+        key,
+        params
+      } = req;
+      if (this.isUniquekeyValid(params)) {
         const nowTime = new Date().getTime();
         if (
           this.updatingList.hasOwnProperty(key) &&
@@ -30,7 +33,7 @@ class UpdateStoreWithLock {
         } else {
           this.updatingList[key] = nowTime;
           req
-            .fn(data)
+            .fn(...params)
             .then(res => {
               delete this.updatingList[key];
               req.resolve(res);
@@ -42,7 +45,7 @@ class UpdateStoreWithLock {
         }
       } else {
         req
-          .fn(data)
+          .fn(...params)
           .then(res => {
             req.resolve(res);
           })
@@ -56,7 +59,8 @@ class UpdateStoreWithLock {
     }
     this.timeID = setTimeout(() => this.doUpdate(), 0);
   }
-  update(fn, data) {
+  update(fn, ...params) {
+    const data = params[0];
     if (!this._isDataValid(data)) {
       return Promise.reject("invalid data");
     } else {
@@ -64,7 +68,7 @@ class UpdateStoreWithLock {
         const key = data[this.uniqueKey];
         this.waitingList.push({
           fn,
-          data,
+          params: Array.from(params),
           key,
           resolve,
           reject

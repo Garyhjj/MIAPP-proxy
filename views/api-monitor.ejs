@@ -4,89 +4,95 @@
             <div class="col-sm-12">
                 <a class="btn btn-primary" href=<%="/nodeAPI/monitors?date=" +yesterday %> role="button">上一天</a>
                 <% if(!isNow){ %>
-                <a class="btn btn-primary" href=<%="/nodeAPI/monitors?date=" +tomorrow %> role="button">下一天</a>
-                <% }%>
-                <h2>
-                    <%= date %> API访问情况</h2>
-                <h3>共有<%= userListLength %>个用户使用过</h3>
-                <div id="chart" style="width: 90%;height:400px;"></div>
-                <table class="table table-striped">
-                    <caption>访问耗时统计</caption>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>api</th>
-                            <th>访问次数</th>
-                            <th>平均耗时(毫秒)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% 
+                    <a class="btn btn-primary" href=<%="/nodeAPI/monitors?date=" +tomorrow %> role="button">下一天</a>
+                    <% }%>
+                        <h2>
+                            <%= date %> API访问情况</h2>
+                        <% if(hasHistory) {%>
+                            <h3>共有
+                                <%= userListLength %>个用户使用过</h3>
+                            <div id="chart" style="width: 90%;height:400px;"></div>
+                            <table class="table table-striped">
+                                <caption>访问耗时统计</caption>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>api</th>
+                                        <th>访问次数</th>
+                                        <th>平均耗时(毫秒)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% 
                                 for(var i=0,lg = statistics.length ;i<lg;i++){
                                     var target = statistics[i];
                                         %>
-                            <tr>
-                                <th scope="row">
-                                    <%= i+1 %>
-                                </th>
-                                <td>
-                                    <%= target.name %>
-                                </td>
-                                <td>
-                                    <%= target.count %>
-                                </td>
-                                <td>
-                                    <%= target.averageTime %>
-                                </td>
-                            </tr>
-                            <% }%>
+                                        <tr>
+                                            <th scope="row">
+                                                <%= i+1 %>
+                                            </th>
+                                            <td>
+                                                <%= target.name %>
+                                            </td>
+                                            <td>
+                                                <%= target.count %>
+                                            </td>
+                                            <td>
+                                                <%= target.averageTime %>
+                                            </td>
+                                        </tr>
+                                        <% }%>
 
-                    </tbody>
-                </table>
+                                </tbody>
+                            </table>
+                            <% }%>
+                                <% if(!hasHistory) {%>
+                                    <h3>无历史记录</h3>
+                                    <% }%>
             </div>
         </div>
     </div>
     <script src="https://cdn.bootcss.com/echarts/4.1.0.rc2/echarts-en.common.min.js"></script>
-<script>
-    window.onload = function() {
-        var ss= '<%= statisticsByTime %>';
-        if(echarts) {
-            var myChart = echarts.init(document.getElementById('chart'));
-            var xAxis = (() => {
-                var a = [];
-                for(var i=0; i< 24; i++) {
-                    a.push(i<10? '0'+i:i+'');
-                }
-                return a;
-            })();
-        // 指定图表的配置项和数据
-        var option = {
-            title: {
-                text: 'API访问时间分布图'
-            },
-            tooltip: {
-                trigger: 'axis',
-        formatter: "{b}时 <br/>{a} : {c}次",
-            },
-            legend: {
-                data:['访问次数']
-            },
-            xAxis: {
-                data: xAxis
-            },
-            yAxis: {},
-            series: [{
-                name: '访问次数',
-                type: 'bar',
-                data: JSON.parse(ss)
-            }]
-        };
+    <script>
+        window.onload = function () {
+            var ss = '<%= statisticsByTime %>';
+            if (echarts) {
+                var myChart = echarts.init(document.getElementById('chart'));
+                var xAxis = (() => {
+                    var a = [];
+                    for (var i = 0; i < 24; i++) {
+                        a.push(i < 10 ? '0' + i : i + '');
+                    }
+                    return a;
+                })();
+                // 指定图表的配置项和数据
+                var option = {
+                    title: {
+                        text: 'API访问时间分布图'
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: "{b}时 <br/>{a} : {c}次",
+                    },
+                    legend: {
+                        data: ['访问次数']
+                    },
+                    xAxis: {
+                        data: xAxis
+                    },
+                    yAxis: {},
+                    series: [{
+                        name: '访问次数',
+                        type: 'bar',
+                        data: JSON.parse(ss)
+                    }]
+                };
 
-        // 使用刚指定的配置项和数据显示图表。
-        myChart.setOption(option);
+                // 使用刚指定的配置项和数据显示图表。
+                myChart.setOption(option);
+            }
         }
-    }
-</script>
+    </script>
 
 
     <%- include('footer') %>

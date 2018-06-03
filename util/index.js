@@ -4,7 +4,7 @@ const moment = require("moment"),
   winston = require("winston"),
   updateStoreWithLockResolver = require("./updateStoreWithLock")
   .updateStoreWithLockResolver,
-  requestMonitor = require('./requestTime');
+  requestMonitor = require('./requestMonitor');
 const logger = new winston.Logger({
   transports: [
     new winston.transports.Console({
@@ -82,11 +82,14 @@ module.exports = {
       ctx.response.body = err.error || err.message;
     }
   },
-  replaceQuery: function (url, query) {
+  replaceQuery: function (url, query, opts) {
     for (let prop in query) {
+      if (opts && typeof opts.propMap === 'function') {
+        prop = opts.propMap.call(null, prop);
+      }
       url = url.replace(`{${prop}}`, query[prop]);
     }
-    url = url.replace(/\{\w+\}/g, "");
+    url = url.replace(/\{\w+\}/g, opts && opts.nullVal ? opts.nullVal : '');
     return url;
   },
   isModuleAdmin,
@@ -135,5 +138,12 @@ module.exports = {
       statusCode: 400,
       error: errMes
     };
-  }
+  },
+  sqlSafe: (s) => {
+    if (typeof s === 'string') {
+      return s.replace(/\;/g, "；");
+    }
+    throw new Error('not sql');
+  },
+  getUserID: (ctx) => ctx.miUser.UserID
 };

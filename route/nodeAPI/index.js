@@ -58,17 +58,17 @@ router.get('/monitors', async ctx => {
     let statistics = requestMonitor.getStatisticsByAPI(date);
     statistics.sort((a, b) => b.averageTime - a.averageTime);
     const userList = requestMonitor.getUserList(date);
-    const dateMoment = moment(date,format);
-    const yesterday = dateMoment.clone().subtract(1,'days').format(format);
-    const tomorrow = dateMoment.clone().add(1,'days').format(format);
+    const dateMoment = moment(date, format);
+    const yesterday = dateMoment.clone().subtract(1, 'days').format(format);
+    const tomorrow = dateMoment.clone().add(1, 'days').format(format);
     const statisticsByTime = requestMonitor.getStatisticsByTime(date);
     const isNow = moment().format(format) === date;
     const countByTime = (() => {
         let l = [];
-        for(let i=0;i<24;i++) {
-            const h = i<10? '0'+i: i+ '';
+        for (let i = 0; i < 24; i++) {
+            const h = i < 10 ? '0' + i : i + '';
             const data = statisticsByTime.find(s => s.hour === h);
-            l.push(data? data.count: 0);
+            l.push(data ? data.count : 0);
         }
         return l;
     })()
@@ -80,7 +80,8 @@ router.get('/monitors', async ctx => {
         date,
         userListLength: userList.length,
         statisticsByTime: JSON.stringify(countByTime),
-        isNow
+        isNow,
+        hasHistory: !!requestMonitor.searchRequestMonitorByDate(date)
     });
 })
 

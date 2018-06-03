@@ -2,7 +2,7 @@ const request = require("request-promise-native");
 const api = require("../../../../config/api/IPQA");
 const replaceQuery = require("../../../../util/").replaceQuery;
 module.exports = {
-  getExcReportData: function(query, reqOpt) {
+  getExcReportData: function (query, reqOpt) {
     query = query || {};
     let url = replaceQuery(api.getExcReportData, query);
     return request.get(url, reqOpt).then(res => {
@@ -71,5 +71,14 @@ module.exports = {
     return request
       .get(api.getReportData + `?header_id=${headerId}`, reqOpt)
       .then(res => JSON.parse(res));
+  },
+  uploadMachineHdr(data, reqOpt) {
+    return request({
+      uri: api.uploadMachineHdr,
+      method: "POST",
+      headers: reqOpt.headers,
+      body: data,
+      json: true
+    }).then(res => res);
   }
 };

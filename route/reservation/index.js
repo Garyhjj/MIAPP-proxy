@@ -16,20 +16,25 @@ router.use(jwtCheck);
 
 router.get('/applications/server', async (ctx) => {
     const query = ctx.query;
-    res = await req.getServerList(ctx.query, ctx.miOption);
+    const res = await req.getServerList(ctx.query, ctx.miOption);
     ctx.response.body = res;
 })
 
 router.post('/applications', async (ctx) => {
     const query = ctx.request.body;
-    res = await req.updateApplication(query, ctx.miOption).catch(err => err);
-    if(res.statusCode > 0) {
+    let res;
+    if (Array.isArray(query)) {
+        res = await Promise.all(query.map(q => req.updateApplication(query, ctx.miOption))).catch(err => err);
+    } else {
+        res = await req.updateApplication(query, ctx.miOption).catch(err => err);
+    }
+    if (res.statusCode > 0) {
         ctx.response.status = res.statusCode;
         ctx.response.body = res.error;
-    }else if(isErr(res)) {
+    } else if (isErr(res)) {
         ctx.response.status = 400;
         ctx.response.body = res.message;
-    }else{
+    } else {
         ctx.response.body = res;
     }
 })
