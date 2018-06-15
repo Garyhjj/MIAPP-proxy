@@ -53,10 +53,14 @@ function normalDelete(tableName, safePass) {
 function normalUpdate(tableName, safePass) {
     return async (project, by, opts) => {
         let saveProject;
-        try {
-            saveProject = safePass(Object.assign({}, project));
-        } catch (e) {
-            return Promise.reject(e.message);
+        if (typeof safePass === 'function') {
+            try {
+                saveProject = safePass(Object.assign({}, project));
+            } catch (e) {
+                return Promise.reject(e.message);
+            }
+        } else {
+            saveProject = project;
         }
         const afterUpdate = opts && opts.afterUpdate;
         if (saveProject.ID > 0) {

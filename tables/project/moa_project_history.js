@@ -20,6 +20,7 @@ function safePass(body) {
         assert(typeof + body.HEADER_ID === "number", "HEADER_ID 必须为数字类型");
         out.HEADER_ID = +body.HEADER_ID;
     }
+    valueTestAndFormatNumber(body, out, 'TARGET_ID');
     valueTestAndFormatNumber(body, out, 'TARGET_TYPE');
     valueTestAndFormatString(body, out, 'DIFF');
     valueTestAndFormatNumber(body, out, 'CHANGE_TYPE');
@@ -30,10 +31,17 @@ function safePass(body) {
 }
 module.exports = {
     search: ({
-        header_id
+        header_id,
+        page,
     }) => {
         header_id = header_id || null;
-        return db.execute(`select h.*, (select EMPNO from moa_gl_users where ID = h.CREATED_BY) USER_NAME from ${tableName} h where DELETE_FLAG <> 'Y' or DELETE_FLAG is null and header_id = NVL(${header_id},header_id) ORDER BY CREATION_DATE DESC`).then((res) => res.rows)
+        page = page > 0 ? page : 1;
+        const per_count = 5;
+        return db.execute(`select * from  
+        (select t1.*, rownum rn from 
+            (select h.*, (select EMPNO from moa_gl_users where ID = h.CREATED_BY) USER_NAME from ${tableName} h where NVL(DELETE_FLAG,'N') <> 'Y' and header_id = NVL(${header_id},header_id) ORDER BY CREATION_DATE DESC) t1 
+            where rownum<=${page*per_count})  
+      where rn>=${(page-1)*per_count}`).then((res) => res.rows)
             .then(data => {
                 if (Array.isArray(data)) {
                     data = data.map((d) => {

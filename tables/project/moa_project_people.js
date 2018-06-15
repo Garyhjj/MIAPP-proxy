@@ -25,10 +25,15 @@ function safePass(body) {
 }
 module.exports = {
     search: ({
-        header_id
+        header_id,
+        id
     }) => {
         header_id = header_id || null;
-        return db.execute(`select * from ${tableName} where DELETE_FLAG <> 'Y' or DELETE_FLAG is null and header_id = NVL(${header_id},header_id)`).then((res) => res.rows)
+        id = id > 0 ? id : null;
+        if (id) {
+            return db.execute(`select * from ${tableName} where ID=NVL(${id},ID)`).then((res) => res.rows);
+        }
+        return db.execute(`select * from ${tableName} where NVL(DELETE_FLAG,'N') <> 'Y' and header_id = NVL(${header_id},header_id)`).then((res) => res.rows)
     },
     del: normalDelete(tableName, safePass),
     update: normalUpdate(tableName, safePass),

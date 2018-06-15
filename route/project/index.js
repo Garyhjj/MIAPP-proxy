@@ -16,15 +16,62 @@ var router = new Router({
     prefix: "/projects"
 });
 
+function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, moreIgnore) {
+    const header_id = new_data.HEADER_ID;
+    const id = new_data.ID;
+    moreIgnore = moreIgnore || [];
+    if (old_data) {
+        const ignore = ['LAST_UPDATED_BY', 'LAST_UPDATED_DATE', 'CREATION_DATE', 'CREATED_BY', 'ID', 'DELETE_FLAG'].concat(moreIgnore);
+        const changeProp = getChangeProp(new_data, old_data, ignore);
+        if (changeProp.length > 0) {
+            const history = {
+                HEADER_ID: header_id,
+                TARGET_TYPE: targetType,
+                TARGET_ID: id,
+                DIFF: changeProp.join(','),
+                CHANGE_TYPE: 2,
+                BEFORE_STORE: JSON.stringify(old_data),
+                AFTER_STORE: JSON.stringify(new_data)
+            }
+            projectHistory.update(history, userID);
+        }
+    } else {
+        const history = {
+            HEADER_ID: header_id,
+            TARGET_ID: id,
+            TARGET_TYPE: targetType,
+            DIFF: '',
+            CHANGE_TYPE: 1,
+            AFTER_STORE: JSON.stringify(new_data)
+        }
+        projectHistory.update(history, userID);
+    }
+}
+
 router.use(jwtCheck);
 
 // 项目头部开始
 router.get('/headers', async (ctx) => {
     const query = ctx.query;
-    let err;
-    const data = await projectHeaders.search(query).catch((e) => {
-        err = e.message ? e.message : e;
-    });
+    const member = query.member;
+    const parent = query.parent;
+    let err, data;
+    if (typeof member === 'string' && member) {
+        data = await projectHeaders.searchByMember(query).catch((e) => {
+            err = e.message ? e.message : e;
+        });
+    } else if (parent) {
+        const {
+            children
+        } = await projectHeaders.getAllChildrenAndIDList(parent).catch(e => {
+            err = e.message ? e.message : e
+        });
+        data = children;
+    } else {
+        data = await projectHeaders.search(query).catch((e) => {
+            err = e.message ? e.message : e;
+        });
+    }
     if (err) {
         ctx.response.status = 400;
         ctx.response.body = err;
@@ -35,38 +82,54 @@ router.get('/headers', async (ctx) => {
 
 router.post('/headers', async (ctx) => {
     const body = ctx.request.body;
+    const {
+        setParent
+    } = ctx.query;
     let userID = ctx.miUser && getUserID(ctx);
-    let err;
-    const data = await projectHeaders.updateWithLock(body, userID, {
-        afterUpdate: (new_data, old_data) => {
-            if (old_data) {
-                const ignore = ['LAST_UPDATED_BY', 'LAST_UPDATED_DATE', 'CREATION_DATE', 'CREATED_BY', 'ID', 'FINISHED_PECENT', 'CLOSED_TASKS_COUNT', 'TOTAL_TASKS_COUNT', 'DELETE_FLAG'];
-                const changeProp = getChangeProp(new_data, old_data, ignore)
-                if (changeProp.length > 0) {
-                    const history = {
-                        HEADER_ID: new_data.ID,
-                        TARGET_TYPE: 1,
-                        DIFF: changeProp.join(','),
-                        CHANGE_TYPE: 2,
-                        BEFORE_STORE: JSON.stringify(old_data),
-                        AFTER_STORE: JSON.stringify(new_data)
-                    }
-                    projectHistory.update(history, userID);
-                }
-            } else {
+    const afterUpdate = (new_data, old_data) => {
+        const id = new_data.ID;
+        if (old_data) {
+            const ignore = ['LAST_UPDATED_BY', 'LAST_UPDATED_DATE', 'CREATION_DATE', 'CREATED_BY', 'ID', 'FINISHED_PECENT', 'CLOSED_TASKS_COUNT', 'TOTAL_TASKS_COUNT', 'DELETE_FLAG'];
+            const changeProp = getChangeProp(new_data, old_data, ignore)
+            if (changeProp.length > 0) {
                 const history = {
-                    HEADER_ID: new_data.ID,
+                    HEADER_ID: id,
+                    TARGET_ID: id,
                     TARGET_TYPE: 1,
-                    DIFF: '',
-                    CHANGE_TYPE: 1,
+                    DIFF: changeProp.join(','),
+                    CHANGE_TYPE: 2,
+                    BEFORE_STORE: JSON.stringify(old_data),
                     AFTER_STORE: JSON.stringify(new_data)
                 }
                 projectHistory.update(history, userID);
             }
+        } else {
+            const history = {
+                HEADER_ID: id,
+                TARGET_ID: id,
+                TARGET_TYPE: 1,
+                DIFF: '',
+                CHANGE_TYPE: 1,
+                AFTER_STORE: JSON.stringify(new_data)
+            }
+            projectHistory.update(history, userID);
         }
-    }).catch((e) => {
-        err = e.message ? e.message : e;
-    });
+    }
+    let err, data;
+    if (setParent) {
+        data = await projectHeaders.updateParentHeader(body, userID, {
+            afterUpdate
+        }).catch((e) => {
+            err = e.message ? e.message : e;
+        });
+    } else {
+        data = await projectHeaders.updateWithLock(body, userID, {
+            afterUpdate
+        }).catch((e) => {
+            err = e.message ? e.message : e;
+        });
+    }
+
     if (err) {
         ctx.response.status = 400;
         ctx.response.body = err;
@@ -81,6 +144,7 @@ router.delete('/headers', async (ctx) => {
     await projectHeaders.del(id, userID).then((res) => {
         const history = {
             HEADER_ID: id,
+            TARGET_ID: id,
             TARGET_TYPE: 1,
             DIFF: '',
             CHANGE_TYPE: 3
@@ -119,32 +183,9 @@ router.post('/lines', async (ctx) => {
     const body = ctx.request.body;
     let userID = getUserID(ctx);
     let err;
-    const data = await projectLines.updateWithLock(body, getUserID(ctx), {
+    const data = await projectLines.updateWithLock(body, userID, {
         afterUpdate: (new_data, old_data) => {
-            if (old_data) {
-                const ignore = ['LAST_UPDATED_BY', 'LAST_UPDATED_DATE', 'CREATION_DATE', 'CREATED_BY', 'ID', 'DELETE_FLAG'];
-                const changeProp = getChangeProp(new_data, old_data, ignore)
-                if (changeProp.length > 0) {
-                    const history = {
-                        HEADER_ID: new_data.HEADER_ID,
-                        TARGET_TYPE: 2,
-                        DIFF: changeProp.join(','),
-                        CHANGE_TYPE: 2,
-                        BEFORE_STORE: JSON.stringify(old_data),
-                        AFTER_STORE: JSON.stringify(new_data)
-                    }
-                    projectHistory.update(history, userID);
-                }
-            } else {
-                const history = {
-                    HEADER_ID: new_data.HEADER_ID,
-                    TARGET_TYPE: 2,
-                    DIFF: '',
-                    CHANGE_TYPE: 1,
-                    AFTER_STORE: JSON.stringify(new_data)
-                }
-                projectHistory.update(history, userID);
-            }
+            normalUpdateHistoryForPost(new_data, old_data, 2, userID)
         }
     }).catch((e) => {
         err = e.message ? e.message : e;
@@ -157,9 +198,28 @@ router.post('/lines', async (ctx) => {
     }
 })
 router.delete('/lines', async (ctx) => {
-    const id = ctx.query.id;
+    const {
+        id,
+        header_id
+    } = ctx.query;
     let err;
-    await projectLines.del(id, getUserID(ctx)).catch((e) => {
+    let userID = getUserID(ctx);
+    await projectLines.del(id, userID).then(res => projectLines.search({
+        id: id
+    })).then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+            const history = {
+                HEADER_ID: +header_id,
+                TARGET_ID: +id,
+                TARGET_TYPE: 2,
+                DIFF: '',
+                CHANGE_TYPE: 3,
+                AFTER_STORE: JSON.stringify(res[0])
+            }
+            projectHistory.update(history, userID);
+        }
+        return res;
+    }).catch((e) => {
         err = e.message ? e.message : e;
     });;
     if (err) {
@@ -191,7 +251,12 @@ router.get('/people', async (ctx) => {
 router.post('/people', async (ctx) => {
     const body = ctx.request.body;
     let err;
-    const data = await projectPeople.update(body, ctx.miUser && getUserID(ctx)).catch((e) => {
+    let userID = getUserID(ctx);
+    const data = await projectPeople.update(body, userID, {
+        afterUpdate: (new_data, old_data) => {
+            normalUpdateHistoryForPost(new_data, old_data, 3, userID)
+        }
+    }).catch((e) => {
         err = e.message ? e.message : e;
     });
     if (err) {
@@ -202,9 +267,28 @@ router.post('/people', async (ctx) => {
     }
 })
 router.delete('/people', async (ctx) => {
-    const id = ctx.query.id;
+    const {
+        id,
+        header_id
+    } = ctx.query;
     let err;
-    await projectPeople.del(id, getUserID(ctx)).catch((e) => {
+    let userID = getUserID(ctx);
+    await projectPeople.del(id, userID).then(res => projectPeople.search({
+        id: id
+    })).then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+            const history = {
+                HEADER_ID: +header_id,
+                TARGET_ID: +id,
+                TARGET_TYPE: 3,
+                DIFF: '',
+                CHANGE_TYPE: 3,
+                AFTER_STORE: JSON.stringify(res[0])
+            }
+            projectHistory.update(history, userID);
+        }
+        return res;
+    }).catch((e) => {
         err = e.message ? e.message : e;
     });;
     if (err) {
@@ -234,7 +318,12 @@ router.get('/lines/progress', async (ctx) => {
 router.post('/lines/progress', async (ctx) => {
     const body = ctx.request.body;
     let err;
-    const data = await projectLineProgress.update(body, ctx.miUser && getUserID(ctx)).catch((e) => {
+    let userID = getUserID(ctx);
+    const data = await projectLineProgress.update(body, userID, {
+        afterUpdate: (new_data, old_data) => {
+            normalUpdateHistoryForPost(new_data, old_data, 4, userID)
+        }
+    }).catch((e) => {
         err = e.message ? e.message : e;
     });
     if (err) {
@@ -278,7 +367,12 @@ router.get('/lines/comments', async (ctx) => {
 router.post('/lines/comments', async (ctx) => {
     const body = ctx.request.body;
     let err;
-    const data = await projectLineComments.update(body, ctx.miUser && getUserID(ctx)).catch((e) => {
+    let userID = getUserID(ctx);
+    const data = await projectLineComments.update(body, userID, {
+        afterUpdate: (new_data, old_data) => {
+            normalUpdateHistoryForPost(new_data, old_data, 5, userID)
+        }
+    }).catch((e) => {
         err = e.message ? e.message : e;
     });
     if (err) {

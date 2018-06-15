@@ -45,13 +45,18 @@ module.exports = {
     search: ({
         header_id,
         status,
-        assignee
+        assignee,
+        id
     }) => {
         header_id = header_id || null;
         status = status ? `'${status}'` : null;
         assignee = assignee ? `'${assignee}'` : `''`;
-        return db.execute(`select * from ${tableName} where DELETE_FLAG <> 'Y' or DELETE_FLAG is null and header_id = NVL(${header_id},header_id) 
-        and status = NVL(${status},status) and NVL(assignee,'na') = NVL(NVL(${assignee},assignee),'na')`).then((res) => res.rows)
+        id = id > 0 ? id : null;
+        if (id) {
+            return db.execute(`select * from ${tableName} where ID=NVL(${id},ID)`).then((res) => res.rows);
+        }
+        return db.execute(`select * from ${tableName} where NVL(DELETE_FLAG,'N') <> 'Y' and header_id = NVL(${header_id},header_id) 
+        and status = NVL(${status},status) and NVL(assignee,'na') = NVL(NVL(${assignee},assignee),'na')`).then((res) => res.rows);
     },
     del: normalDelete(tableName, safePass),
     update: normalUpdate(tableName, safePass),

@@ -34,7 +34,7 @@ module.exports = {
         line_id
     }) => {
         line_id = line_id || null;
-        return db.execute(`select * from ${tableName} where DELETE_FLAG <> 'Y' or DELETE_FLAG is null and line_id = NVL(${line_id},line_id) ORDER BY CREATION_DATE DESC`).then((res) => res.rows)
+        return db.execute(`select * from ${tableName} where NVL(DELETE_FLAG,'N') <> 'Y' and line_id = NVL(${line_id},line_id) ORDER BY CREATION_DATE DESC`).then((res) => res.rows)
     },
     del: normalDelete(tableName, safePass),
     update: normalUpdate(tableName, safePass),
