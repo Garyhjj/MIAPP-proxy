@@ -42,6 +42,7 @@ function safePass(body) {
     valueTestAndFormatString(body, out, 'STATUS');
     valueTestAndFormatDate(body, out, 'START_DATE');
     valueTestAndFormatDate(body, out, 'DUE_DATE');
+    valueTestAndFormatString(body, out, 'CODE');
     assert(Object.keys(out).length > 0, "无有效更新内容");
     return out;
 }
@@ -52,24 +53,24 @@ function safePassParent(body) {
         assert(typeof + body.ID === "number", "ID 必须为数字类型");
         out.ID = +body.ID;
     }
-    valueTestAndFormatNumber(body, out, 'PARENT_HEADER');
+    valueTestAndFormatString(body, out, 'PARENT_HEADER');
     assert(Object.keys(out).length > 0, "无有效更新内容");
     return out;
 }
 
-function getItChildren(id) {
-    if (id > 0) {
-        return db.execute(`select * from moa_project_headers where PARENT_HEADER = ${id} and nvl(delete_flag,'N') <> 'Y'`).then((res) => res.rows).then(ls => {
+function getItChildren(code) {
+    if (typeof code === 'string') {
+        return db.execute(`select * from moa_project_headers where parent_header = '${code}' and nvl(delete_flag,'N') <> 'Y'`).then((res) => res.rows).then(ls => {
             return ls.map(l => {
                 let out = {};
                 out.title = l;
-                out.key = l.ID;
-                out.ID = l.ID;
+                out.key = l.CODE;
+                out.ID = l.CODE;
                 return out;
             })
         });
     } else {
-        return Promise.reject(`id is not valid`);
+        return null;
     }
 }
 
@@ -107,6 +108,18 @@ async function getAllChildrenAndIDList(parent) {
         children
     }
 }
+
+const beforeUpdate = (p) => {
+    if (!p.ID > 0) {
+        return db.execute(`select getProjectNo('M') code from dual`).then(res => res.rows[0].CODE).then((c) => {
+            p.CODE = c;
+            return p;
+        })
+    } else {
+        return p;
+    }
+}
+
 module.exports = {
     search: ({
         status,
@@ -139,25 +152,37 @@ module.exports = {
         and OWNER =NVL(${out.owner},OWNER)`).then((res) => res.rows);
     },
     del: normalDelete(tableName, safePass),
-    update: normalUpdate(tableName, safePass),
-    updateWithLock: (...params) => updateWithLock.update(normalUpdate(tableName, safePass), ...params),
+    update: normalUpdate(tableName, safePass, {
+        beforeUpdate
+    }),
+    updateWithLock: (...params) => updateWithLock.update(normalUpdate(tableName, safePass, {
+        beforeUpdate
+    }), ...params),
     updateParentHeader: async (project, by, opts) => {
-        const parent_id = +project.PARENT_HEADER;
+        const parent_code = project.PARENT_HEADER;
+        const code = project.CODE;
+        if (code === parent_code) {
+            return Promise.reject('不能设置自己为父项目');
+        }
         const id = project.ID;
-        if (parent_id > 0) {
+        if (parent_code) {
+            const target = await db.execute(`select 1 from ${tableName} where NVL(DELETE_FLAG,'N') <> 'Y' and code= '${parent_code}'`).then((res) => res.rows);
+            if (target.length === 0) {
+                return Promise.reject('没有此父项目');
+            }
             const {
                 childIDList
-            } = await getAllChildrenAndIDList(id);
-            if (childIDList.indexOf(parent_id) > -1) {
+            } = await getAllChildrenAndIDList(code);
+            if (childIDList.indexOf(parent_code) > -1) {
                 return Promise.reject('不能把自己的子孙项目设为父项目');
             }
             return normalUpdate(tableName, safePassParent)({
-                PARENT_HEADER: parent_id,
+                PARENT_HEADER: parent_code,
                 ID: id,
                 LAST_UPDATED_DATE: project.LAST_UPDATED_DATE
             }, by, opts);
         } else {
-            if (parent_id === -1) {
+            if (parent_code === '') {
                 return normalUpdate(tableName, safePassParent)({
                     PARENT_HEADER: '',
                     ID: id,
@@ -172,6 +197,10 @@ module.exports = {
         status,
         startDate,
         endDate,
+        owner,
+        code,
+        type,
+        parent
     }) => {
         status = status ? `'${status}'` : null;
         let out = {};
@@ -185,6 +214,18 @@ module.exports = {
             valueTestAndFormatString({
                 member
             }, out, 'member');
+            valueTestAndFormatString({
+                owner
+            }, out, 'owner');
+            valueTestAndFormatString({
+                type
+            }, out, 'type');
+            valueTestAndFormatString({
+                code
+            }, out, 'code');
+            valueTestAndFormatString({
+                parent
+            }, out, 'parent')
         } catch (e) {
             return Promise.reject(e.message);
         }
@@ -195,7 +236,12 @@ module.exports = {
         and NVL(DELETE_FLAG,'N') <> 'Y' 
         and status = NVL(${status},status)
         and nvl(DUE_DATE,to_date('20180101', 'yyyymmdd')) <= nvl(NVL(${out.endDate},DUE_DATE),to_date('20180101', 'yyyymmdd')) 
-        and nvl(DUE_DATE,to_date('20180101', 'yyyymmdd')) >= nvl(NVL(${out.startDate},DUE_DATE),to_date('20180101', 'yyyymmdd'))`).then((res) => res.rows);
+        and nvl(DUE_DATE,to_date('20180101', 'yyyymmdd')) >= nvl(NVL(${out.startDate},DUE_DATE),to_date('20180101', 'yyyymmdd')) 
+        and owner = NVL(${out.owner},owner) 
+        and NVL(code,'M') = NVL(NVL(${out.code},code),'M')
+        and NVL(type,'t') = NVL(NVL(${out.type},type),'t')
+        and (exists (select 1 from moa_project_headers where id = h.parent_header and code=${out.code} )or ${out.code} is null )
+        `).then((res) => res.rows);
     },
     getItChildren,
     getAllChildrenAndIDList

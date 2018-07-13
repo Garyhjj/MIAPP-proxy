@@ -10,19 +10,26 @@ const Router = require("koa-router"),
     projectHistory = require('../../tables/project/moa_project_history'),
     getChangeProp = require('../../tables/share/util').getChangeProp,
     getUserID = util.getUserID,
-    httpErr400 = util.httpErr400;
+    httpErr400 = util.httpErr400,
+    projectUtil = require('./share/utils'),
+    sendMail = require('../../tables/share/util').sendMail;
 
 var router = new Router({
     prefix: "/projects"
 });
 
-function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, moreIgnore) {
+router.use(jwtCheck);
+
+function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, moreIgnore, doMoreChangeProp) {
     const header_id = new_data.HEADER_ID;
     const id = new_data.ID;
     moreIgnore = moreIgnore || [];
     if (old_data) {
         const ignore = ['LAST_UPDATED_BY', 'LAST_UPDATED_DATE', 'CREATION_DATE', 'CREATED_BY', 'ID', 'DELETE_FLAG'].concat(moreIgnore);
-        const changeProp = getChangeProp(new_data, old_data, ignore);
+        let changeProp = getChangeProp(new_data, old_data, ignore);
+        if (typeof doMoreChangeProp === 'function') {
+            changeProp = doMoreChangeProp(changeProp, new_data, old_data);
+        }
         if (changeProp.length > 0) {
             const history = {
                 HEADER_ID: header_id,
@@ -60,7 +67,7 @@ router.get('/headers', async (ctx) => {
         data = await projectHeaders.searchByMember(query).catch((e) => {
             err = e.message ? e.message : e;
         });
-    } else if (parent) {
+    } else if (typeof parent === 'string') {
         const {
             children
         } = await projectHeaders.getAllChildrenAndIDList(parent).catch(e => {
@@ -117,19 +124,34 @@ router.post('/headers', async (ctx) => {
     }
     let err, data;
     if (setParent) {
-        data = await projectHeaders.updateParentHeader(body, userID, {
-            afterUpdate
-        }).catch((e) => {
-            err = e.message ? e.message : e;
-        });
+        if (Array.isArray(body)) {
+            data = await Promise.all(body.map(q => projectHeaders.updateParentHeader(q, userID, {
+                afterUpdate
+            }))).catch((e) => {
+                err = e.message ? e.message : e;
+            });
+        } else {
+            data = await projectHeaders.updateParentHeader(body, userID, {
+                afterUpdate
+            }).catch((e) => {
+                err = e.message ? e.message : e;
+            });
+        }
     } else {
-        data = await projectHeaders.updateWithLock(body, userID, {
-            afterUpdate
-        }).catch((e) => {
-            err = e.message ? e.message : e;
-        });
+        if (Array.isArray(body)) {
+            data = await Promise.all(body.map(q => projectHeaders.updateWithLock(q, userID, {
+                afterUpdate
+            }))).catch((e) => {
+                err = e.message ? e.message : e;
+            });
+        } else {
+            data = await projectHeaders.updateWithLock(body, userID, {
+                afterUpdate
+            }).catch((e) => {
+                err = e.message ? e.message : e;
+            });
+        }
     }
-
     if (err) {
         ctx.response.status = 400;
         ctx.response.body = err;
@@ -179,17 +201,73 @@ router.get('/lines', async (ctx) => {
     };
 })
 
+const afterUpdateForLine = (new_data, old_data, userID, autoMail) => {
+    const fileProperty = 'ATTACHMENT';
+    if (!old_data && new_data.ASSIGNEE && autoMail) {
+        projectUtil.prepare_task_new_assignee_mail(new_data.ASSIGNEE, new_data.ID).then(() => sendMail()).catch((err) => console.error(err));
+    }
+    normalUpdateHistoryForPost(new_data, old_data, 2, userID, [fileProperty], (changeProp, n, o) => {
+        let oldFileList = o[fileProperty];
+        try {
+            oldFileList = JSON.parse(oldFileList);
+            o[fileProperty] = oldFileList;
+        } catch (e) {
+            oldFileList = [];
+        }
+        if (autoMail && changeProp.indexOf('ASSIGNEE') > -1) {
+            let req = [];
+            const oldAss = old_data.ASSIGNEE,
+                newAss = new_data.ASSIGNEE;
+            if (newAss) {
+                req.push(projectUtil.prepare_task_new_assignee_mail(newAss, new_data.ID));
+            }
+            if (oldAss) {
+                if (newAss) {
+                    req.push(projectUtil.prepare_task_old_assignee_mail(oldAss, old_data.ID));
+                } else {
+                    req.push(projectUtil.prepare_task_assignee_reject(oldAss, old_data.ID))
+                }
+            }
+            if (req.length > 0) {
+                Promise.all(req).then(() => sendMail()).catch((err) => console.error(err));
+            }
+        }
+        const oLg = Array.isArray(oldFileList) ? oldFileList.length : 0;
+        const newFileList = n[fileProperty] ? n[fileProperty] : [];
+        const nLg = Array.isArray(newFileList) ? newFileList.length : 0;
+        if (oLg === 0 && nLg === 0) {
+            return changeProp;
+        } else if (oLg !== nLg) {
+            changeProp.push(fileProperty);
+        } else {
+            if (new Set(oldFileList.concat(newFileList)).size !== oLg) {
+                changeProp.push(fileProperty);
+            }
+        }
+        return changeProp;
+    })
+}
 router.post('/lines', async (ctx) => {
     const body = ctx.request.body;
     let userID = getUserID(ctx);
     let err;
-    const data = await projectLines.updateWithLock(body, userID, {
-        afterUpdate: (new_data, old_data) => {
-            normalUpdateHistoryForPost(new_data, old_data, 2, userID)
-        }
-    }).catch((e) => {
-        err = e.message ? e.message : e;
-    });
+    if (Array.isArray(body)) {
+        data = await Promise.all(body.map(q => projectLines.updateWithLock(q, userID, {
+            afterUpdate: (new_data, old_data) => {
+                afterUpdateForLine(new_data, old_data, userID);
+            }
+        }))).catch((e) => {
+            err = e.message ? e.message : e;
+        });
+    } else {
+        data = await projectLines.updateWithLock(body, userID, {
+            afterUpdate: (new_data, old_data) => {
+                afterUpdateForLine(new_data, old_data, userID, true);
+            }
+        }).catch((e) => {
+            err = e.message ? e.message : e;
+        });
+    }
     if (err) {
         ctx.response.status = 400;
         ctx.response.body = err;

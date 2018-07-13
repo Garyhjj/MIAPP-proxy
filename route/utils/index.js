@@ -7,15 +7,15 @@ const Router = require("koa-router"),
   assert = util.assert,
   exec = require("child_process").exec,
   execPromise = command =>
-    new Promise((resolve, reject) => {
-      exec(command, (err, stdout, stderr) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(stdout, stderr);
-        }
-      });
+  new Promise((resolve, reject) => {
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(stdout, stderr);
+      }
     });
+  });
 var router = new Router({
   prefix: "/utils"
 });
@@ -122,7 +122,7 @@ class Log {
     assert(typeof body.STATUS_CODE === "number", "STATUS_CODE 必须为数字类型");
     assert(
       typeof body.BODY === "string" ||
-        (typeof body.BODY === "object" && body.BODY),
+      (typeof body.BODY === "object" && body.BODY),
       "BODY 必须为对象或者字符串"
     );
     assert(
@@ -136,9 +136,10 @@ class Log {
     assert(typeof body.CREATED_BY === "number", "CREATED_BY 必须为数字类型");
     this.STATUS_CODE = body.STATUS_CODE;
     this.BODY =
-      typeof body.BODY === "object"
-        ? JSON.stringify(body.BODY)
-        : body.BODY.replace(/\;/g, "；");
+      typeof body.BODY === "object" ?
+      JSON.stringify(body.BODY) :
+      body.BODY;
+    this.BODY = this.BODY.replace(/\;/g, "；").replace(/\'/g, "’");
     this.MOBILE_FLAG = body.MOBILE_FLAG;
     this.EQUIP_NAME = body.EQUIP_NAME.replace(/\;/g, "；");
     this.CREATED_BY = body.CREATED_BY;

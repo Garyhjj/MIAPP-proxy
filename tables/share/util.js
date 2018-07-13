@@ -4,13 +4,23 @@ const moment = require('moment'),
     db = require("../../lib/oracleDB");
 
 function toStoreDate(date) {
-    return `to_date('${
-        moment(date?date:new Date()).format('YYYYMMDD HH:mm:ss')
-      }','yyyymmdd HH24:Mi:SS')`
+    const m = moment(date);
+    if (date && m.isValid()) {
+        return `to_date('${
+            m.format('YYYYMMDD HH:mm:ss')
+          }','yyyymmdd HH24:Mi:SS')`
+    } else {
+        return `''`
+    }
 }
 
 function toStoreString(s) {
-    return `'${s}'`
+    if (typeof s === 'string') {
+        s = s.replace(/\'/g, "’").replace(/\;/, "；");
+        return `'${s}'`;
+    } else {
+        return `''`;
+    }
 }
 
 function valueTestAndFormat(target, out, name, test) {
@@ -50,8 +60,17 @@ function normalDelete(tableName, safePass) {
     return (ID, by) => db.execute(`update ${tableName} SET DELETE_FLAG =  'Y', LAST_UPDATED_DATE = ${toStoreDate()}, LAST_UPDATED_BY= ${by} where id = ${safePass({ID}).ID}`)
 }
 
-function normalUpdate(tableName, safePass) {
+function normalUpdate(tableName, safePass, set) {
     return async (project, by, opts) => {
+        const outBeforeUpdate = set && set.beforeUpdate;
+        if (typeof outBeforeUpdate === 'function') {
+            const res = outBeforeUpdate(project);
+            if (res instanceof Promise) {
+                project = await res;
+            } else if (typeof res === 'object') {
+                project = res;
+            }
+        }
         let saveProject;
         if (typeof safePass === 'function') {
             try {
@@ -80,7 +99,7 @@ function normalUpdate(tableName, safePass) {
                 }
             }
             const prefix = `update ${tableName} SET `;
-            const last = ` LAST_UPDATED_DATE = ${toStoreDate()}, LAST_UPDATED_BY= ${by} where id = ${project.ID}`;
+            const last = ` LAST_UPDATED_DATE = ${toStoreDate(new Date())}, LAST_UPDATED_BY= ${by} where id = ${project.ID}`;
             delete saveProject.ID;
             let middle = '';
             for (let prop in saveProject) {
@@ -103,7 +122,7 @@ function normalUpdate(tableName, safePass) {
                 values += val + ',';
             }
             let id = await db.execute(`select ${tableName}_seq.nextVal from dual`).then(res => res.rows[0].NEXTVAL);
-            const sql = `insert into ${tableName} (${keys} ID, CREATION_DATE, CREATED_BY) values (${values}${id},${toStoreDate()},${by}) `;
+            const sql = `insert into ${tableName} (${keys} ID, CREATION_DATE, CREATED_BY) values (${values}${id},${toStoreDate(new Date())},${by}) `;
             return db.execute(sql).then((res) => {
                 if (typeof afterUpdate === 'function') {
                     setTimeout(() => afterUpdate(Object.assign(project, {
@@ -138,6 +157,27 @@ function getChangeProp(new_data, old_data, ignore) {
     }
     return changeProp
 }
+
+let sendMailPromise;
+const sendMail = () => {
+    return new Promise((resolve) => {
+        if (sendMailPromise) {
+            resolve(sendMailPromise);
+        } else {
+            sendMailPromise = new Promise((resolve) => {
+                setTimeout(() => {
+                    sendMailPromise = null;
+                    resolve(db.execute(`
+                    begin
+                    MIOA.moa_send_mail_pkg.main;
+                    end;
+                    `, true));
+                }, 3000);
+            })
+        }
+    })
+}
+
 module.exports = {
     toStoreDate,
     toStoreString,
@@ -147,5 +187,6 @@ module.exports = {
     valueTestAndFormatDate,
     normalDelete,
     normalUpdate,
-    getChangeProp
+    getChangeProp,
+    sendMail
 }
