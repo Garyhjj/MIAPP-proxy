@@ -3,12 +3,13 @@ const moment = require('moment'),
     assert = util.assert,
     db = require("../../lib/oracleDB");
 
-function toStoreDate(date) {
+function toStoreDate(date, format) {
+    format = format || 'yyyymmdd HH24:Mi:SS';
     const m = moment(date);
     if (date && m.isValid()) {
         return `to_date('${
             m.format('YYYYMMDD HH:mm:ss')
-          }','yyyymmdd HH24:Mi:SS')`
+          }','${format}')`
     } else {
         return `''`
     }
@@ -49,91 +50,25 @@ function valueTestAndFormatNumber(target, out, name) {
     })
 }
 
-function valueTestAndFormatDate(target, out, name) {
+function valueTestAndFormatDate(target, out, name, format) {
     valueTestAndFormat(target, out, name, () => {
         assert(typeof moment(target[name]).isValid, `${name} 必须为日期格式`);
-        out[name] = toStoreDate(target[name]);
+        out[name] = toStoreDate(target[name], format);
     })
 }
 
-function normalDelete(tableName, safePass) {
-    return (ID, by) => db.execute(`update ${tableName} SET DELETE_FLAG =  'Y', LAST_UPDATED_DATE = ${toStoreDate()}, LAST_UPDATED_BY= ${by} where id = ${safePass({ID}).ID}`)
+function valueTestAndFormatJSON(target, out, name) {
+    valueTestAndFormat(target, out, name, () => {
+        let val = target[name];
+        try {
+            val = JSON.stringify(val);
+            out[name] = toStoreString(val);
+        } catch (e) {
+            assert(true, `${name} 必须为json格式`)
+        }
+    })
 }
 
-function normalUpdate(tableName, safePass, set) {
-    return async (project, by, opts) => {
-        const outBeforeUpdate = set && set.beforeUpdate;
-        if (typeof outBeforeUpdate === 'function') {
-            const res = outBeforeUpdate(project);
-            if (res instanceof Promise) {
-                project = await res;
-            } else if (typeof res === 'object') {
-                project = res;
-            }
-        }
-        let saveProject;
-        if (typeof safePass === 'function') {
-            try {
-                saveProject = safePass(Object.assign({}, project));
-            } catch (e) {
-                return Promise.reject(e.message);
-            }
-        } else {
-            saveProject = project;
-        }
-        const afterUpdate = opts && opts.afterUpdate;
-        if (saveProject.ID > 0) {
-            const old = await db.execute(`select * from ${tableName} where ID = ${saveProject.ID}`).then(res => {
-                if (Array.isArray(res.rows) && res.rows.length > 0) {
-                    return res.rows[0];
-                }
-            });
-            if (old) {
-                const OUT_LAST_UPDATED_DATE = project.LAST_UPDATED_DATE;
-                const STORE_LAST_UPDATED_DATE = old.LAST_UPDATED_DATE;
-                if (
-                    STORE_LAST_UPDATED_DATE &&
-                    !moment(OUT_LAST_UPDATED_DATE).isSame(STORE_LAST_UPDATED_DATE)
-                ) {
-                    return Promise.reject('该单据已被更新,请刷新');
-                }
-            }
-            const prefix = `update ${tableName} SET `;
-            const last = ` LAST_UPDATED_DATE = ${toStoreDate(new Date())}, LAST_UPDATED_BY= ${by} where id = ${project.ID}`;
-            delete saveProject.ID;
-            let middle = '';
-            for (let prop in saveProject) {
-                const m = `${prop} = ${saveProject[prop]}`
-                middle += m + ',';
-            }
-            return db.execute(prefix + middle + last).then((res) => {
-                if (typeof afterUpdate === 'function') {
-                    afterUpdate(project, old);
-                }
-                return res;
-            });
-        } else {
-            delete saveProject.ID;
-            let keys = '',
-                values = '';
-            for (let prop in saveProject) {
-                keys += prop + ',';
-                const val = saveProject[prop];
-                values += val + ',';
-            }
-            let id = await db.execute(`select ${tableName}_seq.nextVal from dual`).then(res => res.rows[0].NEXTVAL);
-            const sql = `insert into ${tableName} (${keys} ID, CREATION_DATE, CREATED_BY) values (${values}${id},${toStoreDate(new Date())},${by}) `;
-            return db.execute(sql).then((res) => {
-                if (typeof afterUpdate === 'function') {
-                    setTimeout(() => afterUpdate(Object.assign(project, {
-                        ID: id
-                    })), 0);
-                }
-                return id;
-            });
-        }
-    }
-}
 
 function getChangeProp(new_data, old_data, ignore) {
     const changeProp = [];
@@ -185,8 +120,7 @@ module.exports = {
     valueTestAndFormatString,
     valueTestAndFormatNumber,
     valueTestAndFormatDate,
-    normalDelete,
-    normalUpdate,
+    valueTestAndFormatJSON,
     getChangeProp,
     sendMail
 }

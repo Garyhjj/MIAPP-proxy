@@ -48,6 +48,7 @@
     "winston": "2.4.0"
   },
   "devDependencies": {
+    "cac": "^5.0.10",
     "cross-env": "^5.1.4"
   }
 }

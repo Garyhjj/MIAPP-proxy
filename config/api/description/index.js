@@ -1,9 +1,7 @@
+const {
+    apiDescriptionGroups
+} = require('../../../util/apiDescription');
 
-
-module.exports ={
-    info:[
-        require('./route/users/'),
-        require('./route/IPQA/'),
-        require('./route/reservation/')
-    ]
+module.exports = {
+    info: apiDescriptionGroups
 }

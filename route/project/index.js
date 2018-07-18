@@ -12,12 +12,16 @@ const Router = require("koa-router"),
     getUserID = util.getUserID,
     httpErr400 = util.httpErr400,
     projectUtil = require('./share/utils'),
-    sendMail = require('../../tables/share/util').sendMail;
+    sendMail = require('../../tables/share/util').sendMail,
+    {
+        ApiDescriptionGroup
+    } = require('../../util/apiDescription');
 
 var router = new Router({
     prefix: "/projects"
 });
 
+const apiDescriptionGroup = new ApiDescriptionGroup(router);
 router.use(jwtCheck);
 
 function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, moreIgnore, doMoreChangeProp) {
@@ -37,8 +41,8 @@ function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, more
                 TARGET_ID: id,
                 DIFF: changeProp.join(','),
                 CHANGE_TYPE: 2,
-                BEFORE_STORE: JSON.stringify(old_data),
-                AFTER_STORE: JSON.stringify(new_data)
+                BEFORE_STORE: old_data,
+                AFTER_STORE: new_data
             }
             projectHistory.update(history, userID);
         }
@@ -49,13 +53,13 @@ function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, more
             TARGET_TYPE: targetType,
             DIFF: '',
             CHANGE_TYPE: 1,
-            AFTER_STORE: JSON.stringify(new_data)
+            AFTER_STORE: new_data
         }
         projectHistory.update(history, userID);
     }
 }
 
-router.use(jwtCheck);
+apiDescriptionGroup.add();
 
 // 项目头部开始
 router.get('/headers', async (ctx) => {
@@ -105,8 +109,8 @@ router.post('/headers', async (ctx) => {
                     TARGET_TYPE: 1,
                     DIFF: changeProp.join(','),
                     CHANGE_TYPE: 2,
-                    BEFORE_STORE: JSON.stringify(old_data),
-                    AFTER_STORE: JSON.stringify(new_data)
+                    BEFORE_STORE: old_data,
+                    AFTER_STORE: new_data
                 }
                 projectHistory.update(history, userID);
             }
@@ -117,7 +121,7 @@ router.post('/headers', async (ctx) => {
                 TARGET_TYPE: 1,
                 DIFF: '',
                 CHANGE_TYPE: 1,
-                AFTER_STORE: JSON.stringify(new_data)
+                AFTER_STORE: new_data
             }
             projectHistory.update(history, userID);
         }
@@ -185,8 +189,11 @@ router.delete('/headers', async (ctx) => {
 })
 // 项目头部结束
 
+
+
 // 项目任务开始
 
+apiDescriptionGroup.add();
 router.get('/lines', async (ctx) => {
     const query = ctx.query;
     let err;
@@ -292,7 +299,7 @@ router.delete('/lines', async (ctx) => {
                 TARGET_TYPE: 2,
                 DIFF: '',
                 CHANGE_TYPE: 3,
-                AFTER_STORE: JSON.stringify(res[0])
+                AFTER_STORE: res[0]
             }
             projectHistory.update(history, userID);
         }
@@ -361,7 +368,7 @@ router.delete('/people', async (ctx) => {
                 TARGET_TYPE: 3,
                 DIFF: '',
                 CHANGE_TYPE: 3,
-                AFTER_STORE: JSON.stringify(res[0])
+                AFTER_STORE: res[0]
             }
             projectHistory.update(history, userID);
         }
@@ -493,4 +500,6 @@ router.get('/history', async (ctx) => {
 })
 
 // 项目历史结束
+
+console.log(router)
 module.exports = router;

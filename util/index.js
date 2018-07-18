@@ -44,6 +44,9 @@ const isDate = date => {
 const isNumber = num => {
   return !Number.isNaN(Number(num));
 };
+const isString = string => {
+  return typeof string === 'string';
+};
 const isReqError = res =>
   (res && typeof res.statusCode === "number") ||
   (typeof res.name === "string" && res.name.indexOf("Error") > -1);
@@ -54,6 +57,7 @@ const assert = (s, m) => {
 };
 module.exports = {
   isArray,
+  isString,
   requestOption,
   isReqError,
   updateStoreWithLockResolver,
