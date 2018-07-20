@@ -5,21 +5,59 @@ const Router = require('koa-router'),
     isErr = util.isReqError,
     jwtCheck = require('../../middlewares/').jwtCheck,
     baseReq = require('./share/utils/baseReq'),
-    req = require('./share/utils/req/');
+    req = require('./share/utils/req/'),
+    {
+        ApiDescriptionGroup
+    } = require('../../util/apiDescription');
 
 
 var router = new Router({
     prefix: '/reservations'
 });
 
+const apiDescriptionGroup = new ApiDescriptionGroup(router);
+
 router.use(jwtCheck);
 
+apiDescriptionGroup.add({
+    tip: '获得服务人员的需要查看的申请表',
+    params: [{
+            name: 'empno',
+            type: 'string类型,工号，不传则返回全部',
+            example: 'FX823'
+        },
+        {
+            name: 'status',
+            type: 'string类型, New | Processing',
+            example: 'New'
+        },
+        {
+            name: 'deptID',
+            type: 'number类型， 1',
+            example: 1
+        }
+    ],
+    results: [{
+        code: 200,
+        fromTable: 'moa_services',
+        dataIsArray: true
+    }]
+})
 router.get('/applications/server', async (ctx) => {
     const query = ctx.query;
     const res = await req.getServerList(ctx.query, ctx.miOption);
     ctx.response.body = res;
 })
 
+
+apiDescriptionGroup.add({
+    tip: '更新及插入服务，带插入及抢单验证',
+    bodyFromTable: 'moa_services',
+    results: [{
+        code: 200,
+        data: `number`
+    }]
+})
 router.post('/applications', async (ctx) => {
     const query = ctx.request.body;
     let res;

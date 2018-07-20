@@ -3,7 +3,7 @@ const t = `const {
     TableFactory
 } = require('./{{prePath}}share/tableFactory');
 
-const tableName = {{ tableName }},
+const tableName = '{{ tableName }}',
     table = new TableFactory(tableName, {
         {{ tableDefine }}
     }),
@@ -11,7 +11,7 @@ const tableName = {{ tableName }},
 
 
 module.exports = {
-    search: table.search(),
+    search: table.search.bind(table),
     del: table.initDelete(),
     update
 }

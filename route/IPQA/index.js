@@ -1,35 +1,135 @@
 const Router = require("koa-router"),
-  request = require("request-promise-native"),
   config = require("./share/config/"),
   util = require("../../util"),
-  reqOption = util.requestOption,
   isErr = util.isReqError,
   jwtCheck = require("../../middlewares/").jwtCheck,
-  bossTipsCollection = require("./share/utils").bossTipsCollection;
-(equipTipsCollection = require("./share/utils").equipTipsCollection),
-(bossReq = require("./share/utils/boss-req/index")),
-(IPQAReq = require("./share/utils/IPQA-req/"));
-baseReq = require("./share/utils/baseReq");
-sortUtils = util.sortUtils;
+  bossTipsCollection = require("./share/utils").bossTipsCollection,
+  equipTipsCollection = require("./share/utils").equipTipsCollection,
+  bossReq = require("./share/utils/boss-req/index"),
+  IPQAReq = require("./share/utils/IPQA-req/"),
+  baseReq = require("./share/utils/baseReq"),
+  sortUtils = util.sortUtils,
+  {
+    ApiDescriptionGroup
+  } = require('../../util/apiDescription');
 
 var router = new Router({
   prefix: "/IPQA"
 });
 
+const apiDescriptionGroup = new ApiDescriptionGroup(router);
+
 router.use(jwtCheck);
 
+apiDescriptionGroup.add({
+  tip: '獲得巡檢報告的評分信息',
+  params: [{
+      name: 'nameID',
+      type: 'number类型,巡檢種類',
+      example: 3,
+    },
+    {
+      name: 'dateFM',
+      type: 'string类型,YYYY-MM-DD',
+      example: `2018-01-01`,
+    },
+    {
+      name: 'dateTO',
+      type: 'string类型,YYYY-MM-DD',
+      example: `2018-01-29`,
+    },
+    {
+      name: 'type',
+      type: 'number类型: 0代表獲得未評分報告，1已評分，其它獲得全部',
+      example: 1,
+    }
+  ],
+  results: [{
+    code: 200,
+    data: `
+{
+ACTUAL_HOURS: number
+ACTUAL_TO_TIME: string
+ACUTAL_FROM_TIME: string
+ADDITIONAL_SCORE: number
+ALL_DONE: string
+HEADER_ID: number
+LINE_NUM: number
+NAME: string
+SCHEDULE_DATE: string
+SCHEDULE_HEADER_ID: number
+SCORE: number
+}[]`
+  }]
+})
 router.get("/commentInfo", async ctx => {
   const query = ctx.query;
   res = await bossReq.getCommentInfo(ctx.query, ctx.miOption);
   ctx.response.body = res;
 });
 
+
+apiDescriptionGroup.add({
+  tip: '獲得巡檢人員的出勤信息',
+  params: [{
+      name: 'nameID',
+      type: 'number类型,巡檢種類',
+      example: 3,
+    },
+    {
+      name: 'dateFM',
+      type: 'string类型,YYYY-MM-DD',
+      example: `2018-01-01`,
+    },
+    {
+      name: 'dateTO',
+      type: 'string类型,YYYY-MM-DD',
+      example: `2018-01-29`,
+    },
+    {
+      name: 'type',
+      type: 'number类型: 1未刷卡，2未產生補休，3已產生補休,其它全部',
+      example: 1,
+    }
+  ],
+  results: [{
+    code: 200,
+    data: `
+{
+ACTUAL_HOURS: number
+ACTUAL_TO_TIME: string
+ACUTAL_FROM_TIME: string
+ADDITIONAL_SCORE: number
+ALL_DONE: string
+HEADER_ID: number
+LINE_NUM: number
+NAME: string
+SCHEDULE_DATE: string
+SCHEDULE_HEADER_ID: number
+SCORE: number
+}[]`
+  }]
+})
 router.get("/attendanceInfo", async ctx => {
   const query = ctx.query;
   res = await bossReq.getAttendanceInfo(ctx.query, ctx.miOption);
   ctx.response.body = res;
 });
 
+
+apiDescriptionGroup.add({
+  tip: '獲得巡檢人員的出勤信息',
+  params: [{
+    name: 'header_id',
+    type: 'number',
+    example: 1
+  }],
+  results: [{
+    code: 200,
+    fromTable: `MRI_REPORT_LINES_ALL`,
+    dataIsArray: true
+  }]
+})
 router.get("/reportLines", async ctx => {
   const query = ctx.query;
   res = await baseReq.getLinesById(ctx.query, ctx.miOption);
@@ -42,6 +142,45 @@ router.get("/reportLines", async ctx => {
   ctx.response.body = lines;
 });
 
+apiDescriptionGroup.add({
+  tip: '獲得問題追蹤列表數據',
+  params: [{
+      name: 'nameID',
+      type: 'number',
+      example: 3
+    },
+    {
+      name: 'company_name',
+      type: 'string类型: MSL',
+      example: 'MSL'
+    },
+    {
+      name: 'type',
+      type: '巡检类别: boss、equip',
+      example: 'boss'
+    },
+    {
+      name: 'dateFM',
+      type: '日期: YYYY-MM-DD',
+      example: '2018-01-01'
+    },
+    {
+      name: 'dateTO',
+      type: '日期: YYYY-MM-DD',
+      example: '2018-03-01'
+    },
+    {
+      name: 'status',
+      type: 'string: New | Waiting | Done | Highlight',
+      example: 'New'
+    }
+  ],
+  results: [{
+    code: 200,
+    fromTable: `MRI_REPORT_LINES_ALL`,
+    dataIsArray: true
+  }]
+})
 router.get("/tracProblems", async ctx => {
   const query = ctx.query;
   const status = query.status;
@@ -62,6 +201,30 @@ router.get("/tracProblems", async ctx => {
   ctx.response.body = res;
 });
 
+
+apiDescriptionGroup.add({
+  tip: '获得对于管理员的提醒数',
+  params: [{
+      name: 'role',
+      type: 'number类型,1超级管理员,2普通管理员,3普通使用者',
+      example: 2
+    },
+    {
+      name: 'type',
+      type: '巡检类别: boss、equip',
+      example: 'boss'
+    },
+    {
+      name: 'company_name',
+      type: 'string类型: MSL',
+      example: 'MSL'
+    }
+  ],
+  results: [{
+    code: 200,
+    data: `非负整数`
+  }]
+})
 router.get("/adminTotalTips", async ctx => {
   let role = +ctx.query.role;
   role = isNaN(role) ? 0 : +role;
@@ -79,12 +242,60 @@ router.get("/adminTotalTips", async ctx => {
   ctx.response.body = res.TIPS;
 });
 
+apiDescriptionGroup.add({
+  tip: '根据类别获得需要处理的报告',
+  params: [{
+      name: 'empno',
+      type: 'string类型: FX823',
+      example: 'FX823'
+    },
+    {
+      name: 'type',
+      type: '巡检类别: boss、equip',
+      example: 'boss'
+    },
+    {
+      name: 'company_name',
+      type: 'string类型: MSL',
+      example: 'MSL'
+    }
+  ],
+  results: [{
+    code: 200,
+    fromTable: `MRI_REPORT_LINES_ALL`,
+    dataIsArray: true
+  }]
+})
 router.get("/ownUndoneReports", async ctx => {
   let query = ctx.query;
   let res = await bossReq.getOwnUndoneReport(query, ctx.miOption).toPromise();
   ctx.response.body = res;
 });
 
+apiDescriptionGroup.add({
+  tip: '根据角色获得IPQA巡检中需要处理的报告',
+  params: [{
+      name: 'empno',
+      type: 'string类型: FX823',
+      example: 'FX823'
+    },
+    {
+      name: 'type',
+      type: '巡检类别: boss、equip',
+      example: 'boss'
+    },
+    {
+      name: 'company_name',
+      type: 'string类型: MSL',
+      example: 'MSL'
+    }
+  ],
+  results: [{
+    code: 200,
+    fromTable: `MRI_REPORT_LINES_ALL`,
+    dataIsArray: true
+  }]
+})
 router.get("/excIPQAReports", async ctx => {
   let query = ctx.query;
   let role = +query.role;
@@ -98,14 +309,15 @@ router.get("/excIPQAReports", async ctx => {
   ctx.response.body = res;
 });
 
-// router.post("/GetHeaderLinesReport", async ctx => {
-//   const result = await IPQAReq.GetHeaderLinesReport(
-//     ctx.request.body,
-//     ctx.miOption
-//   );
-//   ctx.response.body = result;
-// });
 
+apiDescriptionGroup.add({
+  tip: '上传IPQA巡检报告',
+  bodyFromTable: 'MRI_REPORT_LINES_ALL',
+  results: [{
+    code: 200,
+    data: 'number'
+  }]
+})
 router.post("/UploadReport", async ctx => {
   let result;
   const body = ctx.request.body;
@@ -162,6 +374,15 @@ router.post("/UploadReport", async ctx => {
   ctx.response.body = result;
 });
 
+apiDescriptionGroup.add({
+  tip: '上传需要巡检的设备的信息',
+  bodyFromTable: 'MRI_MACHINE_HEADERS_ALL',
+  bodyCanArray: true,
+  results: [{
+    code: 200,
+    data: 'number or number[]'
+  }]
+})
 router.post("/UploadMachineHdr", async ctx => {
   const body = ctx.request.body;
   let res;

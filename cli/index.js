@@ -1,7 +1,4 @@
 const cac = require('cac'),
-    fs = require('fs'),
-    path = require('path'),
-    db = require('../lib/oracleDB'),
     createTable = require('./createTable');
 
 

@@ -1,6 +1,6 @@
 const jwtCheck = require('./jwtCheck');
 const requestOption = require('../util/requestOption'),
-    requestMonitor = require('../util').requestMonitor;
+    requestMonitor = require('../util/requestMonitor');
 module.exports = {
     jwtCheck,
     prepareReqOption: (ctx, next) => {
@@ -19,7 +19,7 @@ module.exports = {
         ctx.beginPathTime = new Date().getTime();
         await next();
         requestMonitor.updateTime(method + ': ' + path, new Date().getTime() - ctx.beginPathTime);
-        if(typeof ctx.miUser === 'object' && ctx.miUser.UserID) {
+        if (typeof ctx.miUser === 'object' && ctx.miUser.UserID) {
             requestMonitor.updateUserList(ctx.miUser.UserID);
         }
     }

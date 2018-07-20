@@ -59,7 +59,39 @@ function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, more
     }
 }
 
-apiDescriptionGroup.add();
+apiDescriptionGroup.add({
+    tip: '获取项目列表',
+    params: [{
+        name: 'member',
+        type: '组员工号',
+        example: 'FX823'
+    }, {
+        name: 'parent',
+        type: '父项目编号',
+        example: 'M2018070011'
+    }, {
+        name: 'status',
+        type: '状态',
+        example: 'Open'
+    }, {
+        name: 'startDate',
+        type: '根据截止时间的开始范围',
+        example: '2018-07-01'
+    }, {
+        name: 'endDate',
+        type: '根据截止时间的结束范围',
+        example: '2018-07-21'
+    }, {
+        name: 'owner',
+        type: '负责人工号',
+        example: 'FX823'
+    }],
+    results: [{
+        code: 200,
+        fromTable: 'moa_project_headers',
+        dataIsArray: true
+    }]
+});
 
 // 项目头部开始
 router.get('/headers', async (ctx) => {
@@ -91,6 +123,20 @@ router.get('/headers', async (ctx) => {
     }
 })
 
+apiDescriptionGroup.add({
+    tip: '更新或插入项目',
+    bodyFromTable: 'moa_project_headers',
+    bodyCanArray: true,
+    params: [{
+        name: 'setParent',
+        type: '1,用于更新parent_header的栏位,有额外验证',
+        example: '1'
+    }],
+    results: [{
+        code: 200,
+        data: `number[] or number`
+    }]
+});
 router.post('/headers', async (ctx) => {
     const body = ctx.request.body;
     const {
@@ -163,6 +209,19 @@ router.post('/headers', async (ctx) => {
         ctx.response.body = data;
     }
 })
+
+apiDescriptionGroup.add({
+    tip: '删除项目信息',
+    params: [{
+        name: 'id',
+        type: '项目id',
+        example: '99'
+    }],
+    results: [{
+        code: 200,
+        data: '{}'
+    }]
+});
 router.delete('/headers', async (ctx) => {
     const id = ctx.query.id;
     let userID = getUserID(ctx);
@@ -193,7 +252,63 @@ router.delete('/headers', async (ctx) => {
 
 // 项目任务开始
 
-apiDescriptionGroup.add();
+apiDescriptionGroup.add({
+    tip: '获得任务列表',
+    params: [{
+        name: 'header_id',
+        type: 'number,所属项目的id',
+        example: '99'
+    }, {
+        name: 'status',
+        type: '状态',
+        example: 'open'
+    }, {
+        name: 'assignee',
+        type: '处理人工号',
+        example: 'FX823'
+    }, {
+        name: 'startDate',
+        type: '根据截止时间的开始范围',
+        example: '2018-07-01'
+    }, {
+        name: 'endDate',
+        type: '根据截止时间的结束范围',
+        example: '2018-07-21'
+    }, {
+        name: 'id',
+        type: 'number,任务id',
+        example: '99'
+    }, {
+        name: 'owner',
+        type: '工号,所属项目的负责人',
+        example: 'FX823'
+    }, {
+        name: 'customer',
+        type: '客户',
+        example: 'intel'
+    }, {
+        name: 'bu',
+        type: '所属bu',
+        example: 'EBU'
+    }, {
+        name: 'code',
+        type: '编号',
+        example: 'T20180603'
+    }, {
+        name: 'model',
+        type: '产品',
+        example: 'M50'
+    }, {
+        name: 'type',
+        type: '种类',
+        example: 'FX823'
+    }],
+    results: [{
+        code: 200,
+        fromTable: 'moa_project_lines',
+        dataIsArray: true
+    }]
+});
 router.get('/lines', async (ctx) => {
     const query = ctx.query;
     let err;
@@ -254,6 +369,16 @@ const afterUpdateForLine = (new_data, old_data, userID, autoMail) => {
         return changeProp;
     })
 }
+
+apiDescriptionGroup.add({
+    tip: '更新或插入任务',
+    bodyFromTable: 'moa_project_lines',
+    bodyCanArray: true,
+    results: [{
+        code: 200,
+        data: `number[] or number`
+    }]
+});
 router.post('/lines', async (ctx) => {
     const body = ctx.request.body;
     let userID = getUserID(ctx);
@@ -282,6 +407,19 @@ router.post('/lines', async (ctx) => {
         ctx.response.body = data;
     }
 })
+
+apiDescriptionGroup.add({
+    tip: '删除任务信息',
+    params: [{
+        name: 'id',
+        type: '任务id',
+        example: '99'
+    }],
+    results: [{
+        code: 200,
+        data: '{}'
+    }]
+});
 router.delete('/lines', async (ctx) => {
     const {
         id,
@@ -319,6 +457,26 @@ router.delete('/lines', async (ctx) => {
 
 
 // 项目人员开始
+
+apiDescriptionGroup.add({
+    tip: '获得项目组员',
+    params: [{
+            name: 'id',
+            type: '组员id',
+            example: '5'
+        },
+        {
+            name: 'header_id',
+            type: '所属项目id',
+            example: '99'
+        }
+    ],
+    results: [{
+        code: 200,
+        fromTable: 'moa_project_people',
+        dataIsArray: true
+    }]
+});
 router.get('/people', async (ctx) => {
     const query = ctx.query;
     let err;
@@ -333,6 +491,14 @@ router.get('/people', async (ctx) => {
     }
 })
 
+apiDescriptionGroup.add({
+    tip: '更新或插入项目组员',
+    bodyFromTable: 'moa_project_people',
+    results: [{
+        code: 200,
+        data: `number`
+    }]
+});
 router.post('/people', async (ctx) => {
     const body = ctx.request.body;
     let err;
@@ -351,6 +517,25 @@ router.post('/people', async (ctx) => {
         ctx.response.body = data;
     }
 })
+
+apiDescriptionGroup.add({
+    tip: '删除项目组员',
+    params: [{
+            name: 'id',
+            type: '组员id',
+            example: '5'
+        },
+        {
+            name: 'header_id',
+            type: '所属项目id,这是为了插入历史记录',
+            example: '99'
+        }
+    ],
+    results: [{
+        code: 200,
+        data: '{}'
+    }]
+});
 router.delete('/people', async (ctx) => {
     const {
         id,
@@ -386,6 +571,20 @@ router.delete('/people', async (ctx) => {
 // 项目人员结束
 
 // 任务进度开始
+
+apiDescriptionGroup.add({
+    tip: '获得任务进度',
+    params: [{
+        name: 'line_id',
+        type: '所属任务id',
+        example: '5'
+    }],
+    results: [{
+        code: 200,
+        fromTable: 'moa_project_line_progress',
+        dataIsArray: true
+    }]
+});
 router.get('/lines/progress', async (ctx) => {
     const query = ctx.query;
     let err;
@@ -400,6 +599,14 @@ router.get('/lines/progress', async (ctx) => {
     }
 })
 
+apiDescriptionGroup.add({
+    tip: '更新或插入任务进度',
+    bodyFromTable: 'moa_project_line_progress',
+    results: [{
+        code: 200,
+        data: `number`
+    }]
+});
 router.post('/lines/progress', async (ctx) => {
     const body = ctx.request.body;
     let err;
@@ -418,6 +625,19 @@ router.post('/lines/progress', async (ctx) => {
         ctx.response.body = data;
     }
 })
+
+apiDescriptionGroup.add({
+    tip: '删除任务进度',
+    params: [{
+        name: 'id',
+        type: '进度id',
+        example: '5'
+    }],
+    results: [{
+        code: 200,
+        data: '{}'
+    }]
+});
 router.delete('/lines/progress', async (ctx) => {
     const id = ctx.query.id;
     let err;
@@ -435,6 +655,19 @@ router.delete('/lines/progress', async (ctx) => {
 
 // 任务评论开始
 
+apiDescriptionGroup.add({
+    tip: '获得任务留言',
+    params: [{
+        name: 'line_id',
+        type: '所属任务id',
+        example: '5'
+    }],
+    results: [{
+        code: 200,
+        fromTable: 'moa_project_line_comments',
+        dataIsArray: true
+    }]
+});
 router.get('/lines/comments', async (ctx) => {
     const query = ctx.query;
     let err;
@@ -449,6 +682,14 @@ router.get('/lines/comments', async (ctx) => {
     }
 })
 
+apiDescriptionGroup.add({
+    tip: '更新或插入任务留言',
+    bodyFromTable: 'moa_project_line_comments',
+    results: [{
+        code: 200,
+        data: `number`
+    }]
+});
 router.post('/lines/comments', async (ctx) => {
     const body = ctx.request.body;
     let err;
@@ -467,6 +708,19 @@ router.post('/lines/comments', async (ctx) => {
         ctx.response.body = data;
     }
 })
+
+apiDescriptionGroup.add({
+    tip: '删除任务留言',
+    params: [{
+        name: 'id',
+        type: '留言id',
+        example: '5'
+    }],
+    results: [{
+        code: 200,
+        data: '{}'
+    }]
+});
 router.delete('/lines/comments', async (ctx) => {
     const id = ctx.query.id;
     let err;
@@ -485,6 +739,25 @@ router.delete('/lines/comments', async (ctx) => {
 
 // 项目历史开始
 
+apiDescriptionGroup.add({
+    tip: '获得项目的历史记录',
+    params: [{
+            name: 'header_id',
+            type: '所属任务id',
+            example: '5'
+        },
+        {
+            name: 'page',
+            type: '第几页',
+            example: '2'
+        }
+    ],
+    results: [{
+        code: 200,
+        fromTable: 'moa_project_history',
+        dataIsArray: true
+    }]
+});
 router.get('/history', async (ctx) => {
     const query = ctx.query;
     let err;
@@ -501,5 +774,4 @@ router.get('/history', async (ctx) => {
 
 // 项目历史结束
 
-console.log(router)
 module.exports = router;

@@ -1,10 +1,5 @@
 const Router = require('koa-router'),
-    request = require('request-promise-native'),
-    config = require('../../config/base'),
-    util = require('../../util'),
-    reqOption = util.requestOption,
-    isErr = util.isReqError,
-    requestMonitor = util.requestMonitor,
+    requestMonitor = require('../../util/requestMonitor'),
     des = require('../../config/api/description/'),
     moment = require('moment');
 
@@ -53,7 +48,7 @@ router.get('/details', async (ctx) => {
 })
 
 router.get('/monitors', async ctx => {
-    const format = 'YYYYMMDD';
+    const format = 'YYYY-MM-DD';
     const date = ctx.query.date || moment().format(format);
     let statistics = requestMonitor.getStatisticsByAPI(date);
     statistics.sort((a, b) => b.averageTime - a.averageTime);

@@ -11,7 +11,7 @@
                         <% 
                                     var parmasUrl= route.info.prefix + '/' + apis.info.route;
                                     var parmasUrlEx = parmasUrl;
-                                    if(api.parmas){
+                                    if(api && api.parmas){
                                     for(var k =0;k<api.parmas.length;k++){
                                         var right = k===0? '?':'&';
                                         var p = api.parmas[k].name;
@@ -33,89 +33,89 @@
                             <pre><code><%= api.body%></code></pre>
                         </h4>
                     </div>
-                <%}%>
-                <% if(api.parmas && api.parmas.length>0) {%>
-                <table class="table table-striped">
-                    <caption>url参数说明</caption>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>name</th>
-                            <th>type</th>
-                            <th>是否可空</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% var h = 1;
+                    <%}%>
+                        <% if(api.parmas && api.parmas.length>0) {%>
+                            <table class="table table-striped">
+                                <caption>url参数说明</caption>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>name</th>
+                                        <th>type</th>
+                                        <th>是否可空</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% var h = 1;
                                 for(var i=0;i<api.parmas.length;i++){
                                     var r = api.parmas[i]
                                         %>
-                            <tr>
-                                <th scope="row">
-                                    <%= h++ %>
-                                </th>
-                                <td>
-                                    <%= r.name %>
-                                </td>
-                                <td>
-                                    <%= r.type %>
-                                </td>
-                                <td>
-                                    <%= r.canNull?'是':'否' %>
-                                </td>
-                            </tr>
-                            <%}%>
+                                        <tr>
+                                            <th scope="row">
+                                                <%= h++ %>
+                                            </th>
+                                            <td>
+                                                <%= r.name %>
+                                            </td>
+                                            <td>
+                                                <%= r.type %>
+                                            </td>
+                                            <td>
+                                                <%= r.canNull?'是':'否' %>
+                                            </td>
+                                        </tr>
+                                        <%}%>
 
-                    </tbody>
-                </table>
-                <%}%>
-                <% if(api.url_example){%>
-                <div class="margin">
-                    <h3>url例子:</h3>
-                    <h4>
-                        <pre><code><%= parmasUrl + api.url_example %></code></pre>
-                    </h4>
-                </div>
-                <%}%>
-                <% if(api.body_example){%>
-                    <div class="margin">
-                        <h3>body例子:</h3>
-                        <h4>
-                            <pre><code><%= api.body_example %></code></pre>
-                        </h4>
-                    </div>
-                    <%}%>
-                <% if(api.results && api.results.length>0) {%>
-                <table class="table table-striped margin">
-                    <caption>回复说明</caption>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>code</th>
-                            <th>data</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <%
+                                </tbody>
+                            </table>
+                            <%}%>
+                                <% if(api.url_example){%>
+                                    <div class="margin">
+                                        <h3>url例子:</h3>
+                                        <h4>
+                                            <pre><code><%= parmasUrl + api.url_example %></code></pre>
+                                        </h4>
+                                    </div>
+                                    <%}%>
+                                        <% if(api.body_example){%>
+                                            <div class="margin">
+                                                <h3>body例子:</h3>
+                                                <h4>
+                                                    <pre><code><%= api.body_example %></code></pre>
+                                                </h4>
+                                            </div>
+                                            <%}%>
+                                                <% if(api.results && api.results.length>0) {%>
+                                                    <table class="table table-striped margin">
+                                                        <caption>回复说明</caption>
+                                                        <thead>
+                                                            <tr>
+                                                                <th>#</th>
+                                                                <th>code</th>
+                                                                <th>data</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <%
                             for(var i=0;i<api.results.length;i++){
                                 var r = api.results[i]
                         %>
-                            <tr>
-                                <th scope="row">
-                                    <%= ++i %>
-                                </th>
-                                <td>
-                                    <%= r.code %>
-                                </td>
-                                <td>
-                                    <pre><code><%= r.data %></code></pre>
-                                </td>
-                            </tr>
-                            <%}%>
+                                                                <tr>
+                                                                    <th scope="row">
+                                                                        <%= ++i %>
+                                                                    </th>
+                                                                    <td>
+                                                                        <%= r.code %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <pre><code><%= r.data %></code></pre>
+                                                                    </td>
+                                                                </tr>
+                                                                <%}%>
 
-                    </tbody>
-                </table>
-                <%}%>
+                                                        </tbody>
+                                                    </table>
+                                                    <%}%>
             </div>
         </div>
     </div>

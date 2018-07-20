@@ -50,7 +50,7 @@ module.exports = (cli) => {
         if (flags.name) {
             const tableName = flags.name;
             console.log('connect with the db');
-            db.execute(`select * from ${tableName}`).then((res) => {
+            db.execute(`select * from ${tableName} where rownum = 1`).then((res) => {
                 console.log('getting db result');
                 let metaData = res.metaData;
                 let out = Object.create(null);

@@ -1,6 +1,6 @@
-const apiDescriptionGroups = [require('../config/api/description/route/users'), require('../config/api/description/route/IPQA'),
-    require('../config/api/description/route/reservation')
-];
+const db = require('../lib/oracleDB');
+
+const apiDescriptionGroups = [];
 
 function observerRouter(router) {
     let way = ['get', 'delete', 'post', 'put'];
@@ -22,46 +22,108 @@ function observerRouter(router) {
     })
     return router;
 }
+const dbType = {
+    2003: `date`,
+    2002: 'number',
+    2001: 'string'
+}
+const tableDefinesCache = Object.create(null);
+
+function getTableDefineString(tableName) {
+    let cache = tableDefinesCache[tableName];
+    if (cache) {
+        return Promise.resolve(cache);
+    } else {
+        return db.execute(`select * from ${tableName} where rownum = 1`).then(res => res.metaData).then((metaData) => {
+            const middle = Object.create(null);
+            if (Array.isArray(metaData)) {
+                metaData.forEach(m => {
+                    middle[m.name] = dbType[m.fetchType] ? dbType[m.fetchType] : 'string'
+                })
+            }
+            let tableDefine = ``;
+            for (let prop in middle) {
+                tableDefine = tableDefine ? tableDefine + ',\r\n' : '\r\n' + tableDefine;
+                tableDefine += `${prop}: ${middle[prop]}`;
+            }
+            tableDefinesCache[tableName] = tableDefine;
+            return tableDefine;
+        })
+    }
+}
 class RouteDescriptionFactory {
     constructor(layer, params) {
         const method = layer.method;
+        const path = layer.path;
         switch (method) {
             case 'get':
-                return new RouteGetDescription(layer.path, params);
+            case 'delete':
+            case 'post':
+            case 'put':
+                return new RouteDescription(path, method, params, getTableDefineString);
+            default:
+                return null
         }
     }
 }
-
-class RouteGetDescription {
-    constructor(path, params) {
-        return {
-            info: {
-                route: path,
-                des: [{
-                    method: 'GET',
-                    parmas: [{
-                            name: 'role',
-                            type: 'number类型,1超级管理员,2普通管理员,3普通使用者',
-                            canNull: true,
-                        },
-                        {
-                            name: 'type',
-                            type: '巡检类别: boss、equip',
-                            canNull: true,
-                        },
-                        {
-                            name: 'company_name',
-                            type: 'string类型: MSL',
-                            canNull: true,
-                        }
-                    ],
-                    results: [{
-                        code: 200,
-                        data: `非负整数`
-                    }],
-                    tip: '获得对于管理员的提醒数',
-                    url_example: '?role=1&type=boss&company_name=MSL'
-                }]
+class RouteDescription {
+    constructor(path, method, params, getTableDefineString) {
+        this.getTableDefineString = getTableDefineString;
+        this.info = {
+            route: path,
+            des: [{
+                method: method.toUpperCase(),
+                parmas: []
+            }]
+        }
+        this.initParams(params);
+    }
+    initParams(params) {
+        if (typeof params === 'object' && params) {
+            let des = this.info.des[0];
+            des.tip = params.tip;
+            if (Array.isArray(params.params)) {
+                const p = params.params;
+                des.parmas = p;
+                des.url_example = '';
+                p.forEach(p => {
+                    if (p.example) {
+                        const text = `${p.name}=${p.example}`;
+                        des.url_example = des.url_example ? des.url_example + '&' + text : '?' + text;
+                    }
+                    if (!p.hasOwnProperty('canNull')) {
+                        p.canNull = true;
+                    }
+                })
+            }
+            const getTableDefineString = (table, cb) => {
+                this.getTableDefineString(table).then((res) => {
+                    cb && cb(`{${res}\r\n}`);
+                }).catch((err) => {
+                    console.error(err)
+                })
+            }
+            des.body = params.body || '';
+            des.body_example = params.body_example || '';
+            if (params.bodyFromTable) {
+                getTableDefineString(params.bodyFromTable, (data) => {
+                    des.body = data + (params.bodyCanArray ? 'or this[]' : '');
+                });
+            }
+            if (params.results) {
+                const results = params.results;
+                if (Array.isArray(results)) {
+                    des.results = results;
+                } else {
+                    des.results = [results];
+                }
+                des.results.forEach((r) => {
+                    if (r.fromTable) {
+                        getTableDefineString(r.fromTable, (data) => {
+                            r.data = data + (r.dataIsArray ? '[]' : '');
+                        });
+                    }
+                })
             }
         }
     }
@@ -101,7 +163,16 @@ class ApiDescriptionGroup {
             desList.forEach((d, idx) => {
                 const l = hasDesLayer[idx];
                 if (!l.finishedDes) {
-                    this.info.routes.push(new RouteDescriptionFactory(l, d));
+                    const routes = this.info.routes;
+                    const des = new RouteDescriptionFactory(l, d);
+                    if (des) {
+                        const tar = routes.find(r => r.info.route === des.info.route);
+                        if (tar) {
+                            tar.info.des.push(des.info.des[0]);
+                        } else {
+                            routes.push(des);
+                        }
+                    }
                     l.finishedDes = true;
                 }
             })

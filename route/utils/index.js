@@ -15,10 +15,18 @@ const Router = require("koa-router"),
         resolve(stdout, stderr);
       }
     });
-  });
+  }),
+  {
+    ApiDescriptionGroup
+  } = require('../../util/apiDescription');
+
 var router = new Router({
   prefix: "/utils"
 });
+
+const apiDescriptionGroup = new ApiDescriptionGroup(router);
+
+
 if (!util.isProduction()) {
   const safeCommands = [
     "npm run update",
@@ -71,6 +79,24 @@ if (!util.isProduction()) {
   });
 }
 
+apiDescriptionGroup.add({
+  tip: '获得日记信息',
+  params: [{
+      name: 'fromDate',
+      type: '日期',
+      example: '2017/12/31'
+    },
+    {
+      name: 'endDate',
+      type: '日期',
+      example: '2018/1/31'
+    }
+  ],
+  results: [{
+    code: 200,
+    fromTable: 'MOA_LOG_TABLE'
+  }]
+})
 router.get("/logs", async ctx => {
   const query = ctx.query;
   let fromDate = moment(query.fromDate || "2017/12/31");
@@ -91,6 +117,14 @@ router.get("/logs", async ctx => {
   ctx.response.body = result.rows;
 });
 
+apiDescriptionGroup.add({
+  tip: '获得日记信息',
+  bodyFromTable: 'MOA_LOG_TABLE',
+  results: [{
+    code: 200,
+    data: '{}'
+  }]
+})
 router.post("/logs", async ctx => {
   const body = ctx.request.body;
   let log, error;

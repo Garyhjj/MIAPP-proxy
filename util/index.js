@@ -3,8 +3,7 @@ const fs = require("fs");
 const moment = require("moment"),
   winston = require("winston"),
   updateStoreWithLockResolver = require("./updateStoreWithLock")
-  .updateStoreWithLockResolver,
-  requestMonitor = require('./requestMonitor');
+  .updateStoreWithLockResolver;
 const logger = new winston.Logger({
   transports: [
     new winston.transports.Console({
@@ -62,7 +61,6 @@ module.exports = {
   isReqError,
   updateStoreWithLockResolver,
   assert,
-  requestMonitor,
   handlerError: async (ctx, next) => {
     try {
       await next();

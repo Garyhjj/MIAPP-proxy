@@ -1,6 +1,7 @@
-const moment = require('moment');
+const moment = require('moment'),
+    monitorsTable = require('../tables/system/moa_end_monitors');
 
-const dateFormat = 'YYYYMMDD';
+const dateFormat = 'YYYY-MM-DD';
 class RequestMonitor {
     constructor() {
         this.requestCount = Object.create(null);
@@ -8,6 +9,7 @@ class RequestMonitor {
         this.requestTimeRange = Object.create(null);
         this.userList = new Set();
         this.date = moment().format(dateFormat);
+        this.isStored = false;
     }
 
     updateTime(path, during) {
@@ -58,14 +60,34 @@ class RequestMonitor {
 
 const requestTimeList = []
 
+function initRequestTimeList() {
+    monitorsTable.search().then((res) => {
+        if (Array.isArray(res)) {
+            res.forEach(r => {
+                requestTimeList.push(r.MONITOR_BODY)
+            })
+        }
+    }).catch(err => console.error(err))
+}
+
+initRequestTimeList();
+
 function requestMonitorFactory() {
 
 }
 requestMonitorFactory.updateTime = function (path, during) {
-    const old = requestTimeList.find(r => r.date === moment().format(dateFormat));
+    const nowDate = moment().format(dateFormat);
+    const old = requestTimeList.find(r => r.date === nowDate);
     if (old) {
         old.updateTime(path, during);
     } else {
+        const beforeAndNotStored = requestTimeList.filter(r => !r.isStored && moment(r.date, dateFormat).isBefore(moment(nowDate, dateFormat)));
+        beforeAndNotStored.forEach((l) => {
+            monitorsTable.update({
+                MONITOR_DATE: l.date,
+                MONITOR_BODY: l
+            }, -1).then().catch((err) => console.error(err))
+        })
         const newOne = new RequestMonitor();
         requestTimeList.unshift(newOne);
         newOne.updateTime(path, during);
