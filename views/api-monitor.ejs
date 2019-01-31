@@ -56,8 +56,9 @@
     <script>
         window.onload = function () {
             var ss = '<%= statisticsByTime %>';
-            if (echarts) {
-                var myChart = echarts.init(document.getElementById('chart'));
+            var dom = document.getElementById('chart');
+            if (echarts && dom) {
+                var myChart = echarts.init(dom);
                 var xAxis = (() => {
                     var a = [];
                     for (var i = 0; i < 24; i++) {

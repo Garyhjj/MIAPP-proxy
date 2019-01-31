@@ -58,7 +58,7 @@ class TableFactory {
 
     _initSafePass() {
         let tableColomnDefine = this.tableColomnDefine;
-        this.safePass = (target) => {
+        this.safePass = (target, notUpdate) => {
             let out = {};
             for (let prop in tableColomnDefine) {
                 let type = tableColomnDefine[prop];
@@ -76,7 +76,9 @@ class TableFactory {
                     }
                 }
             }
-            assert(Object.keys(out).length > 0, "无有效更新内容");
+            if (!notUpdate) {
+                assert(Object.keys(out).length > 0, "无有效更新内容");
+            }
             return out;
         }
     }
@@ -92,7 +94,7 @@ class TableFactory {
         if (!(isString(sql) && sql)) {
             const tableName = this.tableName;
             if (this.properties.hasDeleteFlag) {
-                sql = `select * from ${tableName} where NVL(DELETE_FLAG,'N') <> 'Y'`
+                sql = `select * from ${tableName} where NVL(${this.properties.deleteFlag},'N') <> 'Y'`
             } else {
                 sql = `select * from ${tableName}`;
             }
@@ -104,7 +106,7 @@ class TableFactory {
                         try {
                             l[j] = JSON.parse(l[j])
                         } catch (e) {
-                            console.error(e)
+                            console.error(e, l[j])
                         }
                     });
                     return l;
@@ -113,18 +115,44 @@ class TableFactory {
             return ls;
         });
     }
+
+    makeWhereLogicString(params, notNull, prefix) {
+        if (typeof params === 'object') {
+            let out = '';
+            params = Object.assign({}, params);
+            for (let prop in params) {
+                if (params.hasOwnProperty(prop)) {
+                    params[prop.toLocaleUpperCase()] = params[prop];
+                }
+            }
+            params = this.safePass(params, true);
+            prefix = prefix || '';
+            for (let prop in params) {
+                if (params.hasOwnProperty(prop)) {
+                    const val = params[prop],
+                        one = `(${notNull?'': `${val} is null or `}${prefix? prefix+'.':''}${prop} = ${val})`;
+                    out = out ? `${out} and ${one}` : one;
+                }
+            }
+            return out;
+        } else {
+            return '';
+        }
+    }
     initDelete(sql) {
         return (id, by) => {
             if (!(isString(sql) && sql)) {
                 const tableName = this.tableName;
                 const properties = this.properties;
                 const primaryKey = properties.primaryKey;
+                let _sql = '';
                 if (this.properties.hasDeleteFlag) {
-                    sql = `update ${tableName} SET ${properties.deleteFlag} =  'Y', ${properties.LastUpdateDate} = ${toStoreDate()}, ${properties.lastUpdatedBy}= ${by} 
+                    _sql = `update ${tableName} SET ${properties.deleteFlag} =  'Y', ${properties.LastUpdateDate} = ${toStoreDate()}, ${properties.lastUpdatedBy}= ${by} 
                     where ${primaryKey} = ${this.safePass({[primaryKey]: id})[primaryKey]}`
                 } else {
-                    sql = `delete from ${tableName} where ${primaryKey} = ${this.safePass({[primaryKey]: id})[primaryKey]}`;
+                    _sql = `delete from ${tableName} where ${primaryKey} = ${this.safePass({[primaryKey]: id})[primaryKey]}`;
                 }
+                return db.execute(_sql);
             }
             return db.execute(sql);
         }
@@ -133,11 +161,21 @@ class TableFactory {
         let safePass = this.safePass,
             tableName = this.tableName,
             properties = this.properties;
+        by = by || -1;
         const outBeforeUpdate = properties.beforeUpdate;
         if (typeof outBeforeUpdate === 'function') {
-            const res = outBeforeUpdate(target);
+            const res = outBeforeUpdate(target, by);
             if (res instanceof Promise) {
-                target = await res;
+                let err;
+                let pRes = await res.catch(e => {
+                    err = e
+                });
+                if (err) {
+                    return Promise.reject(err);
+                }
+                if (typeof pRes === 'object') {
+                    target = pRes;
+                }
             } else if (typeof res === 'object') {
                 target = res;
             }
@@ -168,7 +206,7 @@ class TableFactory {
                 const OUT_LAST_UPDATED_DATE = target[lastUpdateDateKey];
                 const STORE_LAST_UPDATED_DATE = old[lastUpdateDateKey];
                 if (
-                    STORE_LAST_UPDATED_DATE &&
+                    OUT_LAST_UPDATED_DATE && STORE_LAST_UPDATED_DATE &&
                     !moment(OUT_LAST_UPDATED_DATE).isSame(STORE_LAST_UPDATED_DATE)
                 ) {
                     return Promise.reject('该单据已被更新,请刷新');
@@ -210,9 +248,12 @@ class TableFactory {
             const sql = `insert into ${tableName} (${keys} ${primaryKey}, ${creationDateKey}, ${createdByKey}) values (${values}${id},${toStoreDate(new Date())},${by}) `;
             return db.execute(sql).then((res) => {
                 if (typeof afterUpdate === 'function') {
-                    setTimeout(() => afterUpdate(Object.assign(target, {
+                    const r1 = afterUpdate(Object.assign(target, {
                         ID: id
-                    })), 0);
+                    }));
+                    if (r1 instanceof Promise) {
+                        return r1.then(() => id);
+                    }
                 }
                 return id;
             });

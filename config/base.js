@@ -1,7 +1,7 @@
-const formatProxy = "http://miapphost01.mic.com.cn/",
+const formatProxy = 'http://miwebapiintra.mic.com.cn/', // "http://miapphost01.mic.com.cn/",
   testProxy = "http://webapi.mic.com.cn/",
   isProd = require("../util/").isProduction,
-  proxy = isProd() ? formatProxy : testProxy;
+  proxy = isProd() ? formatProxy : formatProxy;
 module.exports = {
   // proxy: 'http://miapphost01.mic.com.cn/'
   proxy: proxy,
@@ -15,5 +15,5 @@ module.exports = {
     user: "mioa",
     password: "msloa",
     connectString: `10.86.3.41:1531/mioa`
-  }
+  },
 };

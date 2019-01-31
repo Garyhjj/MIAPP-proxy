@@ -1,5 +1,6 @@
 const crypto = require("crypto"),
-  key = "MiTAC@!QAZ2wsx";
+  key = require("../constants").jwtKey;
+
 function jwtCheck(ctx, next) {
   let token = ctx.request.headers.access_token;
   let errMes, decode;
@@ -10,9 +11,9 @@ function jwtCheck(ctx, next) {
     const user = JSON.parse(Buffer.from(content, "base64").toString());
     if (
       crypto
-        .createHmac("sha256", header + "." + content)
-        .update(key)
-        .digest("base64") !== sign
+      .createHmac("sha256", header + "." + content)
+      .update(key)
+      .digest("base64") !== sign
     ) {
       errMes = "授权無效";
     } else {

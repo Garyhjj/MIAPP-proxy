@@ -16,6 +16,8 @@ const logger = new winston.Logger({
   ],
   level: "error"
 });
+const crypto = require("crypto"),
+  key = require("../constants").jwtKey;
 
 const isModuleAdmin = function (privilege, type) {
   if (privilege === void 0) return false;
@@ -54,7 +56,63 @@ const assert = (s, m) => {
     throw new Error(m);
   }
 };
+
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function hasOwn(
+  obj,
+  key,
+) {
+  return hasOwnProperty.call(obj, key);
+}
+
+function fakeToken() {
+  const expDate = new Date(Date.now() + 1000 * 60 * 30);
+  header = ``,
+    content = Buffer.from(JSON.stringify({
+      Exp: expDate.toISOString(),
+      UserID: 26.0,
+      CompanyID: "MSL"
+    })).toString("base64"),
+    sign = crypto
+    .createHmac("sha256", header + "." + content)
+    .update(key)
+    .digest("base64");
+  return {
+    token: `${header}.${content}.${sign}`,
+    exp: expDate.getTime()
+  }
+}
+
+function promisify(nodeFunction) {
+  function promisified(...args) {
+    return new Promise((resolve, reject) => {
+      function callback(err, ...result) {
+        if (err)
+          return reject(err);
+        if (result.length === 1)
+          return resolve(result[0]);
+        return resolve(result);
+      }
+      nodeFunction.call(null, ...args, callback);
+    });
+  }
+  return promisified;
+}
+
+function arrayClassifyByOne(target, prop) {
+  if (!Array.isArray(target)) return null;
+  let out = {};
+  target.forEach(t => {
+    const val = t[prop] || 'null';
+    out[val] = out[val] || [];
+    out[val].push(t);
+  })
+  return out;
+}
 module.exports = {
+  hasOwn,
+  fakeToken,
   isArray,
   isString,
   requestOption,
@@ -133,7 +191,7 @@ module.exports = {
     }
   },
   isProduction() {
-    return process.env.NODE_ENV && process.env.NODE_ENV.trim() === "production";
+    return !!(process.env.NODE_ENV && process.env.NODE_ENV.trim() === "production");
   },
   httpErr400(errMes) {
     return {
@@ -141,11 +199,7 @@ module.exports = {
       error: errMes
     };
   },
-  sqlSafe: (s) => {
-    if (typeof s === 'string') {
-      return s.replace(/\;/g, "；");
-    }
-    throw new Error('not sql');
-  },
-  getUserID: (ctx) => ctx.miUser.UserID
+  getUserID: (ctx) => ctx.miUser && ctx.miUser.UserID || -1,
+  promisify,
+  arrayClassifyByOne
 };

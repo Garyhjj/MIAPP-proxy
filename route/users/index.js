@@ -1,11 +1,19 @@
-const Router = require('koa-router'),
+const {
+    EasyRouter,
+    getQuery,
+    getBody,
+    getUserID,
+    getCtx
+} = require('../../util/easyRouter'),
     jwtCheck = require('../../middlewares/').jwtCheck,
-    getAllTips = require('../share/utils/index').getAllTips,
-    {
-        ApiDescriptionGroup
-    } = require('../../util/apiDescription');
+    getAllTips = require('../share/utils/index').getAllTips, {
+        ApiDescriptionGroup,
+    } = require('../../util/apiDescription'), {
+        hasOwn
+    } = require('../../util'),
+    request = require("request-promise-native");
 
-var router = new Router({
+var router = new EasyRouter({
     prefix: '/users'
 });
 
@@ -32,9 +40,42 @@ apiDescriptionGroup.add({
     moduleId:[61,22]
 }`,
 })
+router.setAgs(getCtx)
 router.post('/tips', async (ctx) => {
     let a = await getAllTips.getNewTips(ctx);
     ctx.response.body = a;
 })
+
+router.setAgs(getBody)
+router.post("/tgt", async (body) => {
+    const {
+        username,
+        password
+    } = body;
+    if (username && password) {
+        const xml = await request.post('https://login1.mic.com.tw/mic-cas-server/v1/tickets', {
+            form: {
+                username,
+                password
+            }
+        });
+        const reg = /(\w+)\s*=\s*"(.*?)"/g;
+        while (reg.exec(xml)) {
+            // console.log(RegExp.$1)
+            if (RegExp.$1 === 'action') {
+                const all = RegExp.$2;
+                const tgt = all.split('/').pop();
+                console.log(tgt)
+                return {
+                    tgt
+                };
+            }
+        }
+    } else {
+        return Promise.reject('无效个人信息');
+    }
+
+
+});
 
 module.exports = router;

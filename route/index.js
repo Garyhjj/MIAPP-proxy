@@ -6,7 +6,9 @@ const Router = require("koa-router"),
   util = require("./utils/"),
   project_route = require('./project'),
   ReportErp_route = require('./ReportErp'),
-  board_route = require('./board');
+  board_route = require('./board'),
+  result_route = require('./exam'),
+  tax_route = require('./tax');
 
 function route(app) {
   const addRoute = (route) =>
@@ -20,6 +22,8 @@ function route(app) {
   addRoute(project_route);
   addRoute(ReportErp_route);
   addRoute(board_route);
+  addRoute(result_route);
+  addRoute(tax_route);
 }
 
 module.exports = route;

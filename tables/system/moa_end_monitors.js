@@ -11,7 +11,10 @@ const tableName = 'MOA_END_MONITORS',
         CREATION_DATE: tableColomnType.date,
         CREATED_BY: tableColomnType.number,
         LAST_UPDATE_DATE: tableColomnType.date,
-        LAST_UPDATED_BY: tableColomnType.number
+        LAST_UPDATED_BY: tableColomnType.number,
+        MORE_ROUTES1: tableColomnType.json,
+        MORE_ROUTES2: tableColomnType.json,
+        MORE_ROUTES3: tableColomnType.json
     }, {
         hasDeleteFlag: false
     }),

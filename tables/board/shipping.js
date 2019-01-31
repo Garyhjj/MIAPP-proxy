@@ -5,6 +5,7 @@ const db = require("../../lib/oracleDB"),
 const tableName = 'ONT.MOE_SHIPPING_KANBAN@micerp';
 
 module.exports = {
+    tableName,
     search: ({
         deptno,
         ofder

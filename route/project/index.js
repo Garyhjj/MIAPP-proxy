@@ -1,6 +1,11 @@
-const Router = require("koa-router"),
+const {
+    EasyRouter,
+    getQuery,
+    getBody,
+    getUserID
+} = require('../../util/easyRouter'),
     util = require("../../util"),
-    isErr = util.isReqError,
+    isArray = util.isArray,
     jwtCheck = require("../../middlewares/").jwtCheck,
     projectHeaders = require('../../tables/project/moa_project_headers'),
     projectLines = require('../../tables/project/moa_project_lines'),
@@ -8,16 +13,15 @@ const Router = require("koa-router"),
     projectLineProgress = require('../../tables/project/moa_project_line_progress'),
     projectLineComments = require('../../tables/project/moa_project_line_comments'),
     projectHistory = require('../../tables/project/moa_project_history'),
+    projectMailSetting = require('../../tables/project/moa_project_mail_setting'),
+    projectLineAssignees = require('../../tables/project/moa_project_line_assignees'),
     getChangeProp = require('../../tables/share/util').getChangeProp,
-    getUserID = util.getUserID,
-    httpErr400 = util.httpErr400,
     projectUtil = require('./share/utils'),
-    sendMail = require('../../tables/share/util').sendMail,
-    {
+    sendMail = require('../../tables/share/util').sendMail, {
         ApiDescriptionGroup
     } = require('../../util/apiDescription');
 
-var router = new Router({
+var router = new EasyRouter({
     prefix: "/projects"
 });
 
@@ -28,9 +32,10 @@ function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, more
     const header_id = new_data.HEADER_ID;
     const id = new_data.ID;
     moreIgnore = moreIgnore || [];
+    let changeProp = [];
     if (old_data) {
         const ignore = ['LAST_UPDATED_BY', 'LAST_UPDATED_DATE', 'CREATION_DATE', 'CREATED_BY', 'ID', 'DELETE_FLAG'].concat(moreIgnore);
-        let changeProp = getChangeProp(new_data, old_data, ignore);
+        changeProp = getChangeProp(new_data, old_data, ignore);
         if (typeof doMoreChangeProp === 'function') {
             changeProp = doMoreChangeProp(changeProp, new_data, old_data);
         }
@@ -57,6 +62,7 @@ function normalUpdateHistoryForPost(new_data, old_data, targetType, userID, more
         }
         projectHistory.update(history, userID);
     }
+    return changeProp;
 }
 
 apiDescriptionGroup.add({
@@ -94,33 +100,22 @@ apiDescriptionGroup.add({
 });
 
 // 项目头部开始
-router.get('/headers', async (ctx) => {
-    const query = ctx.query;
+router.setAgs(getQuery);
+router.get('/headers', async (query) => {
     const member = query.member;
     const parent = query.parent;
-    let err, data;
+    let data;
     if (typeof member === 'string' && member) {
-        data = await projectHeaders.searchByMember(query).catch((e) => {
-            err = e.message ? e.message : e;
-        });
+        data = await projectHeaders.searchByMember(query)
     } else if (typeof parent === 'string') {
         const {
             children
-        } = await projectHeaders.getAllChildrenAndIDList(parent).catch(e => {
-            err = e.message ? e.message : e
-        });
+        } = await projectHeaders.getAllChildrenAndIDList(parent)
         data = children;
     } else {
-        data = await projectHeaders.search(query).catch((e) => {
-            err = e.message ? e.message : e;
-        });
+        data = await projectHeaders.search(query)
     }
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
+    return data;
 })
 
 apiDescriptionGroup.add({
@@ -137,12 +132,11 @@ apiDescriptionGroup.add({
         data: `number[] or number`
     }]
 });
-router.post('/headers', async (ctx) => {
-    const body = ctx.request.body;
+router.setAgs(getBody, getUserID, getQuery)
+router.post('/headers', async (body, userID, query) => {
     const {
         setParent
-    } = ctx.query;
-    let userID = ctx.miUser && getUserID(ctx);
+    } = query;
     const afterUpdate = (new_data, old_data) => {
         const id = new_data.ID;
         if (old_data) {
@@ -172,42 +166,29 @@ router.post('/headers', async (ctx) => {
             projectHistory.update(history, userID);
         }
     }
-    let err, data;
+    let data;
     if (setParent) {
         if (Array.isArray(body)) {
             data = await Promise.all(body.map(q => projectHeaders.updateParentHeader(q, userID, {
                 afterUpdate
-            }))).catch((e) => {
-                err = e.message ? e.message : e;
-            });
+            })));
         } else {
             data = await projectHeaders.updateParentHeader(body, userID, {
                 afterUpdate
-            }).catch((e) => {
-                err = e.message ? e.message : e;
             });
         }
     } else {
         if (Array.isArray(body)) {
             data = await Promise.all(body.map(q => projectHeaders.updateWithLock(q, userID, {
                 afterUpdate
-            }))).catch((e) => {
-                err = e.message ? e.message : e;
-            });
+            })));
         } else {
             data = await projectHeaders.updateWithLock(body, userID, {
                 afterUpdate
-            }).catch((e) => {
-                err = e.message ? e.message : e;
             });
         }
     }
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
+    return data;
 })
 
 apiDescriptionGroup.add({
@@ -222,10 +203,11 @@ apiDescriptionGroup.add({
         data: '{}'
     }]
 });
-router.delete('/headers', async (ctx) => {
-    const id = ctx.query.id;
-    let userID = getUserID(ctx);
-    let err;
+router.setAgs(getQuery, getUserID)
+router.delete('/headers', async (query, userID) => {
+    const {
+        id
+    } = query;
     await projectHeaders.del(id, userID).then((res) => {
         const history = {
             HEADER_ID: id,
@@ -236,15 +218,7 @@ router.delete('/headers', async (ctx) => {
         }
         projectHistory.update(history, userID);
         return res;
-    }).catch((e) => {
-        err = e.message ? e.message : e;
-    });;
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = {};
-    }
+    })
 })
 // 项目头部结束
 
@@ -309,65 +283,77 @@ apiDescriptionGroup.add({
         dataIsArray: true
     }]
 });
-router.get('/lines', async (ctx) => {
-    const query = ctx.query;
-    let err;
-    const data = await projectLines.search(query).catch((e) => {
-        err = e.message ? e.message : e;
-    });
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    };
+router.setAgs(getQuery)
+router.get('/lines', async (query) => {
+    return await projectLines.search(query);
 })
 
 const afterUpdateForLine = (new_data, old_data, userID, autoMail) => {
-    const fileProperty = 'ATTACHMENT';
-    if (!old_data && new_data.ASSIGNEE && autoMail) {
-        projectUtil.prepare_task_new_assignee_mail(new_data.ASSIGNEE, new_data.ID).then(() => sendMail()).catch((err) => console.error(err));
-    }
-    normalUpdateHistoryForPost(new_data, old_data, 2, userID, [fileProperty], (changeProp, n, o) => {
-        let oldFileList = o[fileProperty];
-        try {
-            oldFileList = JSON.parse(oldFileList);
-            o[fileProperty] = oldFileList;
-        } catch (e) {
-            oldFileList = [];
+    const files = 'ATTACHMENT',
+        assignees = 'ASSIGNEE';
+    let newAssignee = new_data[assignees];
+    if (!old_data && newAssignee && autoMail) {
+        newAssignee = Array.isArray(newAssignee) ? newAssignee : [newAssignee];
+        if (newAssignee.length > 0) {
+            newAssignee.forEach(a => {
+                projectUtil.prepare_task_new_assignee_mail(a, new_data.ID).then(() => sendMail()).catch((err) => console.error(err));
+            })
         }
-        if (autoMail && changeProp.indexOf('ASSIGNEE') > -1) {
-            let req = [];
-            const oldAss = old_data.ASSIGNEE,
-                newAss = new_data.ASSIGNEE;
-            if (newAss) {
-                req.push(projectUtil.prepare_task_new_assignee_mail(newAss, new_data.ID));
+    }
+    const changeList = normalUpdateHistoryForPost(new_data, old_data, 2, userID, [files, assignees], (changeProp, n, o) => {
+        const arrayTest = (name) => {
+            let oldFileList = o[name];
+            try {
+                oldFileList = JSON.parse(oldFileList);
+                o[name] = oldFileList;
+            } catch (e) {
+                oldFileList = [];
             }
-            if (oldAss) {
-                if (newAss) {
-                    req.push(projectUtil.prepare_task_old_assignee_mail(oldAss, old_data.ID));
-                } else {
-                    req.push(projectUtil.prepare_task_assignee_reject(oldAss, old_data.ID))
+            oldFileList = Array.isArray(oldFileList) ? oldFileList : [oldFileList]
+            const oLg = oldFileList.length;
+            const newFileList = n[name] ? n[name] : [];
+            const nLg = Array.isArray(newFileList) ? newFileList.length : 0;
+            if (oLg === 0 && nLg === 0) {
+                return changeProp;
+            } else if (oLg !== nLg) {
+                changeProp.push(name);
+            } else {
+                if (new Set(oldFileList.concat(newFileList)).size !== oLg) {
+                    changeProp.push(name);
                 }
+            }
+        }
+        arrayTest(files);
+        arrayTest(assignees);
+        // 負責人更改時的郵件邏輯
+        if (autoMail && changeProp.indexOf(assignees) > -1) {
+            let req = [];
+            let before = old_data.ASSIGNEE,
+                now = new_data.ASSIGNEE;
+            now = isArray(now) ? now : [now];
+            before = isArray(before) ? before : [before];
+            const addOne = now.filter(n => before.indexOf(n) < 0);
+            const addList = addOne.length > 0 ? addOne : [];
+            const deleteOne = before.filter(b => now.indexOf(b) < 0);
+            const deleteList = deleteOne.length > 0 ? deleteOne : [];
+            if (n.rejectFlag === 'Y') {
+                deleteList.forEach(d => req.push(projectUtil.prepare_task_assignee_reject(d, old_data.ID)));
+            } else {
+                deleteList.forEach(d => req.push(projectUtil.prepare_task_old_assignee_mail(d, old_data.ID)));
+                addList.forEach(a => req.push(projectUtil.prepare_task_new_assignee_mail(a, old_data.ID)));
             }
             if (req.length > 0) {
                 Promise.all(req).then(() => sendMail()).catch((err) => console.error(err));
             }
         }
-        const oLg = Array.isArray(oldFileList) ? oldFileList.length : 0;
-        const newFileList = n[fileProperty] ? n[fileProperty] : [];
-        const nLg = Array.isArray(newFileList) ? newFileList.length : 0;
-        if (oLg === 0 && nLg === 0) {
-            return changeProp;
-        } else if (oLg !== nLg) {
-            changeProp.push(fileProperty);
-        } else {
-            if (new Set(oldFileList.concat(newFileList)).size !== oLg) {
-                changeProp.push(fileProperty);
-            }
-        }
         return changeProp;
     })
+    if (changeList.indexOf('DUE_DATE') > -1) {
+        return projectLines.updateWithLock({
+            ID: new_data.ID,
+            MAIL_TYPE: 0
+        }, userID);
+    }
 }
 
 apiDescriptionGroup.add({
@@ -379,32 +365,40 @@ apiDescriptionGroup.add({
         data: `number[] or number`
     }]
 });
-router.post('/lines', async (ctx) => {
-    const body = ctx.request.body;
-    let userID = getUserID(ctx);
-    let err;
+router.setAgs(getBody, getUserID)
+router.post('/lines', async (body, userID) => {
+    let assignee_list = body.ASSIGNEE_LIST || [];
+    assignee_list = Array.from(new Set(assignee_list));
+    body.ASSIGNEE = assignee_list;
+    const updateAssigneeFn = (res) => {
+        const updateAssignee = (line_id) => {
+            return assignee_list.length > 0 ? Promise.all([assignee_list.map(a => projectLineAssignees.update({
+                    ID: 0,
+                    LINE_ID: line_id,
+                    USER_NAME: a
+                }, userID))])
+                .then(() => res) : res;
+        }
+        if (body.ID > 0) {
+            const id = body.ID;
+            return projectLineAssignees.del(`delete from ${projectLineAssignees.tableName} where LINE_ID = ${id}`)()
+                .then((r) => updateAssignee(id))
+        } else {
+            return updateAssignee(res)
+        }
+    }
     if (Array.isArray(body)) {
         data = await Promise.all(body.map(q => projectLines.updateWithLock(q, userID, {
             afterUpdate: (new_data, old_data) => {
                 afterUpdateForLine(new_data, old_data, userID);
             }
-        }))).catch((e) => {
-            err = e.message ? e.message : e;
-        });
+        }).then((res) => updateAssigneeFn(res))));
     } else {
         data = await projectLines.updateWithLock(body, userID, {
             afterUpdate: (new_data, old_data) => {
                 afterUpdateForLine(new_data, old_data, userID, true);
             }
-        }).catch((e) => {
-            err = e.message ? e.message : e;
-        });
-    }
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
+        }).then((res) => updateAssigneeFn(res));
     }
 })
 
@@ -420,13 +414,12 @@ apiDescriptionGroup.add({
         data: '{}'
     }]
 });
-router.delete('/lines', async (ctx) => {
+router.setAgs(getQuery, getUserID);
+router.delete('/lines', async (query, userID) => {
     const {
         id,
         header_id
-    } = ctx.query;
-    let err;
-    let userID = getUserID(ctx);
+    } = query;
     await projectLines.del(id, userID).then(res => projectLines.search({
         id: id
     })).then((res) => {
@@ -442,15 +435,7 @@ router.delete('/lines', async (ctx) => {
             projectHistory.update(history, userID);
         }
         return res;
-    }).catch((e) => {
-        err = e.message ? e.message : e;
-    });;
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = {};
-    }
+    });
 })
 
 // 项目任务结束
@@ -477,18 +462,9 @@ apiDescriptionGroup.add({
         dataIsArray: true
     }]
 });
-router.get('/people', async (ctx) => {
-    const query = ctx.query;
-    let err;
-    const data = await projectPeople.search(query).catch((e) => {
-        err = e.message ? e.message : e;
-    });
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
+router.setAgs(getQuery)
+router.get('/people', async (query) => {
+    return await projectPeople.search(query);
 })
 
 apiDescriptionGroup.add({
@@ -499,23 +475,13 @@ apiDescriptionGroup.add({
         data: `number`
     }]
 });
-router.post('/people', async (ctx) => {
-    const body = ctx.request.body;
-    let err;
-    let userID = getUserID(ctx);
-    const data = await projectPeople.update(body, userID, {
+router.setAgs(getBody, getUserID);
+router.post('/people', async (body, userID) => {
+    return await projectPeople.update(body, userID, {
         afterUpdate: (new_data, old_data) => {
             normalUpdateHistoryForPost(new_data, old_data, 3, userID)
         }
-    }).catch((e) => {
-        err = e.message ? e.message : e;
-    });
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
+    })
 })
 
 apiDescriptionGroup.add({
@@ -536,13 +502,12 @@ apiDescriptionGroup.add({
         data: '{}'
     }]
 });
-router.delete('/people', async (ctx) => {
+router.setAgs(getQuery, getUserID);
+router.delete('/people', async (query, userID) => {
     const {
         id,
         header_id
-    } = ctx.query;
-    let err;
-    let userID = getUserID(ctx);
+    } = query;
     await projectPeople.del(id, userID).then(res => projectPeople.search({
         id: id
     })).then((res) => {
@@ -558,15 +523,7 @@ router.delete('/people', async (ctx) => {
             projectHistory.update(history, userID);
         }
         return res;
-    }).catch((e) => {
-        err = e.message ? e.message : e;
-    });;
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = {};
-    }
+    });
 })
 // 项目人员结束
 
@@ -585,18 +542,9 @@ apiDescriptionGroup.add({
         dataIsArray: true
     }]
 });
-router.get('/lines/progress', async (ctx) => {
-    const query = ctx.query;
-    let err;
-    const data = await projectLineProgress.search(query).catch((e) => {
-        err = e.message ? e.message : e;
-    });
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
+router.setAgs(getQuery);
+router.get('/lines/progress', async (query) => {
+    return await projectLineProgress.search(query)
 })
 
 apiDescriptionGroup.add({
@@ -607,23 +555,13 @@ apiDescriptionGroup.add({
         data: `number`
     }]
 });
-router.post('/lines/progress', async (ctx) => {
-    const body = ctx.request.body;
-    let err;
-    let userID = getUserID(ctx);
-    const data = await projectLineProgress.update(body, userID, {
+router.setAgs(getBody, getUserID);
+router.post('/lines/progress', async (body, userID) => {
+    return await projectLineProgress.update(body, userID, {
         afterUpdate: (new_data, old_data) => {
             normalUpdateHistoryForPost(new_data, old_data, 4, userID)
         }
-    }).catch((e) => {
-        err = e.message ? e.message : e;
     });
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
 })
 
 apiDescriptionGroup.add({
@@ -638,18 +576,10 @@ apiDescriptionGroup.add({
         data: '{}'
     }]
 });
-router.delete('/lines/progress', async (ctx) => {
-    const id = ctx.query.id;
-    let err;
-    await projectLineProgress.del(id, getUserID(ctx)).catch((e) => {
-        err = e.message ? e.message : e;
-    });;
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = {};
-    }
+router.setAgs(getQuery, getUserID);
+router.delete('/lines/progress', async (query, userID) => {
+    const id = query.id;
+    await projectLineProgress.del(id, userID);
 })
 // 任务进度结束
 
@@ -668,18 +598,9 @@ apiDescriptionGroup.add({
         dataIsArray: true
     }]
 });
-router.get('/lines/comments', async (ctx) => {
-    const query = ctx.query;
-    let err;
-    const data = await projectLineComments.search(query).catch((e) => {
-        err = e.message ? e.message : e;
-    });
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
+router.setAgs(getQuery);
+router.get('/lines/comments', async (query) => {
+    return await projectLineComments.search(query);
 })
 
 apiDescriptionGroup.add({
@@ -690,23 +611,13 @@ apiDescriptionGroup.add({
         data: `number`
     }]
 });
-router.post('/lines/comments', async (ctx) => {
-    const body = ctx.request.body;
-    let err;
-    let userID = getUserID(ctx);
-    const data = await projectLineComments.update(body, userID, {
+router.setAgs(getBody, getUserID);
+router.post('/lines/comments', async (body, userID) => {
+    return await projectLineComments.update(body, userID, {
         afterUpdate: (new_data, old_data) => {
             normalUpdateHistoryForPost(new_data, old_data, 5, userID)
         }
-    }).catch((e) => {
-        err = e.message ? e.message : e;
     });
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
 })
 
 apiDescriptionGroup.add({
@@ -721,18 +632,12 @@ apiDescriptionGroup.add({
         data: '{}'
     }]
 });
-router.delete('/lines/comments', async (ctx) => {
-    const id = ctx.query.id;
-    let err;
-    await projectLineComments.del(id, getUserID(ctx)).catch((e) => {
-        err = e.message ? e.message : e;
-    });;
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = {};
-    }
+router.setAgs((ctx) => {
+    const query = getQuery(ctx);
+    return query.id;
+}, getUserID);
+router.delete('/lines/comments', async (id, userID) => {
+    await projectLineComments.del(id, userID);
 })
 
 // 任务评论结束
@@ -758,20 +663,61 @@ apiDescriptionGroup.add({
         dataIsArray: true
     }]
 });
-router.get('/history', async (ctx) => {
-    const query = ctx.query;
-    let err;
-    const data = await projectHistory.search(query).catch((e) => {
-        err = e.message ? e.message : e;
-    });
-    if (err) {
-        ctx.response.status = 400;
-        ctx.response.body = err;
-    } else {
-        ctx.response.body = data;
-    }
+router.setAgs(getQuery)
+router.get('/history', async (query) => {
+    return await projectHistory.search(query);
 })
 
 // 项目历史结束
+
+// 項目郵件設置開始
+apiDescriptionGroup.add({
+    tip: '获得项目管理的邮件通知设置',
+    results: [{
+        code: 200,
+        fromTable: 'moa_project_mail_setting',
+        dataIsArray: true
+    }]
+});
+router.setAgs(1)
+router.get('/settings/mails', async () => {
+    return await projectMailSetting.search();
+})
+
+apiDescriptionGroup.add({
+    tip: '更新或插入项目管理的邮件通知设置',
+    bodyFromTable: 'moa_project_mail_setting',
+    results: [{
+        code: 200,
+        data: `number`
+    }]
+});
+router.setAgs(getBody, getUserID);
+router.post('/settings/mails', async (body, userID) => {
+    return await projectMailSetting.update(body, userID);
+})
+
+apiDescriptionGroup.add({
+    tip: '删除项目管理的邮件通知设置',
+    params: [{
+        name: 'id',
+        type: '设置id',
+        example: '5'
+    }],
+    results: [{
+        code: 200,
+        data: ''
+    }]
+});
+router.setAgs((ctx) => {
+    const query = getQuery(ctx);
+    return query.id;
+}, getUserID);
+router.delete('/settings/mails', async (id, userID) => {
+    await projectMailSetting.del(id, userID);
+})
+
+
+// 項目郵件設置結束
 
 module.exports = router;

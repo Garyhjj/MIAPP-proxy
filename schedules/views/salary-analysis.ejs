@@ -1,0 +1,12 @@
+<%- include('common-header') %>
+<h2 style="text-align: center">
+    <%= title %>
+</h2>
+<%  for(var i = 0;i< imgs.length;i++) {%>
+<div style="margin-bottom: 16px;text-align: center">
+    <img src="<%= imgs[i]%>" alt="">
+</div>
+<% } %>
+<div style="margin-top: 16px;font-size:18px">詳情請到神達通APP查看</div>
+
+<%- include('system-footer') %>

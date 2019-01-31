@@ -14,10 +14,17 @@ const koa = require("koa"),
   compress = require("koa-compress"),
   staticCache = require("koa-static-cache"),
   path = require("path"),
-  moment = require("moment");
+  moment = require("moment"),
+  isProduction = require('./util').isProduction;
 const {
   logger
 } = require("koa2-winston");
+
+const registeSchedule = require('./schedules/utils/registe-schedule');
+
+const isPro = isProduction();
+
+registeSchedule(isPro);
 
 const route = require("./route");
 const config = require("./config").base;
@@ -59,7 +66,7 @@ app.use(
 
 app.use(prepareReqOption);
 
-if (process.env.NODE_ENV && process.env.NODE_ENV.trim() === "production") {
+if (isPro) {
   // 所有请求日志
   app.use(
     logger({

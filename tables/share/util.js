@@ -3,20 +3,23 @@ const moment = require('moment'),
     assert = util.assert,
     db = require("../../lib/oracleDB");
 
-function toStoreDate(date, format) {
-    format = format || 'yyyymmdd HH24:Mi:SS';
+function toStoreDate(date, DBformat, dateFormat) {
+    DBformat = DBformat || 'yyyymmdd HH24:Mi:SS';
+    dateFormat = dateFormat || 'YYYYMMDD HH:mm:ss';
     const m = moment(date);
     if (date && m.isValid()) {
         return `to_date('${
-            m.format('YYYYMMDD HH:mm:ss')
-          }','${format}')`
+            m.format(dateFormat)
+          }','${DBformat}')`
     } else {
         return `''`
     }
 }
 
 function toStoreString(s) {
-    if (typeof s === 'string') {
+    const type = typeof s;
+    if (type === "string" || type === 'number' || type === 'boolean') {
+        s = s + '';
         s = s.replace(/\'/g, "’").replace(/\;/, "；");
         return `'${s}'`;
     } else {

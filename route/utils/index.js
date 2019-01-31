@@ -70,7 +70,7 @@ if (!util.isProduction()) {
         }
       } else {
         ctx.response.status = 400;
-        ctx.response.body = "无效命令";
+        ctx.response.body = "无效命令Y";
       }
     } else {
       ctx.response.status = 403;

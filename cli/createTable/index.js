@@ -56,7 +56,7 @@ module.exports = (cli) => {
                 let out = Object.create(null);
                 let tableDefine = formatTableDefine(metaData);
                 const subPath = flags.subPath ? flags.subPath : '';
-                let tpl = prpareTemplate(template, tableName, tableDefine, tableDefine, subPath);
+                let tpl = prpareTemplate(template, tableName, tableDefine, subPath);
                 const filePath = getFilePath(tableName, subPath);
                 fs.exists(filePath, function (e) {
                     if (!e) {

@@ -29,7 +29,8 @@ const tableName = 'moa_project_headers',
         CODE: tableColomnType.string,
         PARENT_HEADER: tableColomnType.string,
         START_DATE: tableColomnType.date,
-        DUE_DATE: tableColomnType.date
+        DUE_DATE: tableColomnType.date,
+        MAIL_SETTING: tableColomnType.number
     }, {
         LastUpdateDate: 'LAST_UPDATED_DATE',
         beforeUpdate
