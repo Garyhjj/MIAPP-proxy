@@ -23,6 +23,9 @@ async function updateReduction(data, userID) {
         data = [data];
     }
     const target = util.arrayClassifyByOne(data, 'TYPE');
+    if (target.hasOwnProperty('CONTINUING_EDUCATION')) {
+        return Promise.reject('APP版本太低,无法操作,请更新APP!');
+    }
     const now = new Date(),
         year = now.getFullYear(),
         // year = '2019';
@@ -30,24 +33,24 @@ async function updateReduction(data, userID) {
         month = _month < 10 ? '0' + _month : _month + '';
     // month = '02';
     let waitToUpdateList = [],
-        waitToDelType = [],
-        // 记录继续教育的类型的位置
-        edu1 = -1, // 在教育
-        edu2 = -1; //  证书
+        waitToDelType = [];
+    // 记录继续教育的类型的位置
+    // edu1 = -1, // 在教育
+    // edu2 = -1; //  证书
     for (let prop in target) {
         if (target.hasOwnProperty(prop) && prop !== 'null') {
             const ls = target[prop];
             if (ls && ls.length > 0) {
                 waitToDelType.push(prop);
-                if (prop === 'CONTINUING_EDUCATION') {
-                    const eduType = ls[0].EDUCATION_TYPE;
-                    const site = waitToDelType.length - 1;
-                    if (eduType === EDUCATION_1) {
-                        edu1 = site;
-                    } else if (eduType === EDUCATION_2) {
-                        edu2 = site;
-                    }
-                }
+                // if (prop === 'CONTINUING_EDUCATION') {
+                //     const eduType = ls[0].EDUCATION_TYPE;
+                //     const site = waitToDelType.length - 1;
+                //     if (eduType === EDUCATION_1) {
+                //         edu1 = site;
+                //     } else if (eduType === EDUCATION_2) {
+                //         edu2 = site;
+                //     }
+                // }
                 waitToUpdateList = waitToUpdateList.concat(ls);
             }
         }

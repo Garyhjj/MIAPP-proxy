@@ -48,9 +48,13 @@ module.exports = {
       const status = data.STATUS;
       let dayInfos;
       const addServiceLater = data.addServiceLater;
+      const {
+        CONTACT,
+        HANDLER,
+        STATUS
+      } = data;
       if (+data.ID === 0) {
-        dayInfos = await baseReq.getServiceDayInfo(
-          {
+        dayInfos = await baseReq.getServiceDayInfo({
             dept_id: data.DEPT_ID,
             date: data.SERVICE_DATE
           },
@@ -70,8 +74,7 @@ module.exports = {
           }
         }
       } else {
-        const apps = await baseReq.getApplications(
-          {
+        const apps = await baseReq.getApplications({
             docno: data.DOCNO
           },
           reqOption
@@ -95,6 +98,9 @@ module.exports = {
           if (sHandler && sHandler !== qHandler) {
             return httpErr400("该单据已被人抢了,请刷新");
           }
+          if(!app.FIRST_RESPONSE_TIME && S_STATUS === 'New') {
+            data.FIRST_RESPONSE_TIME = moment().format('YYYY-MM-DDT HH:mm:ss');
+          }
         }
         const Q_LAST_UPDATED_DATE = data.LAST_UPDATED_DATE;
         const S_LAST_UPDATED_DATE = app.LAST_UPDATED_DATE;
@@ -110,8 +116,7 @@ module.exports = {
             const req = [];
             newImpressionList.forEach(i => {
               req.push(
-                baseReq.updateImpression(
-                  {
+                baseReq.updateImpression({
                     ID: 0,
                     SERVICE_ID: data.ID,
                     IMPRESSION_ID: +i,
@@ -130,62 +135,86 @@ module.exports = {
       if (addServiceLater) {
         const date = "2018-01-01";
         let req = [];
-        const { fromTime, endTime } = data;
-        const fromTimeMoment = moment(date + " " + fromTime);
-        const endTimeMoment = moment(date + " " + endTime);
+        const {
+          fromTime,
+          endTime
+        } = data;
+        // const fromTimeMoment = moment(date + " " + fromTime);
+        // const endTimeMoment = moment(date + " " + endTime);
         const otherSet = {
           MANUAL_FLAG: "Y"
         };
-        if (data.CONTACT && data.HANDLER && data.CONTACT === data.HANDLER) {
-          otherSet.STATUS = "Closed";
-          otherSet.SCORE = 5;
-        } else {
-          otherSet.STATUS = "Scoring";
+        if (!data.STATUS) {
+          if (CONTACT && HANDLER && CONTACT === HANDLER) {
+            otherSet.STATUS = "Closed";
+            otherSet.SCORE = 5;
+          } else if (HANDLER) {
+            otherSet.STATUS = "Scoring";
+          } else {
+            otherSet.STATUS = "New";
+          }
         }
-        dayInfos &&
-          dayInfos.forEach(day => {
-            const { END_TIME, START_TIME } = day;
-            const END_TIMEMoment = moment(date + " " + END_TIME);
-            const START_TIMEMoment = moment(date + " " + START_TIME);
-            if (
-              fromTimeMoment.isBefore(END_TIMEMoment) &&
-              endTimeMoment.isAfter(START_TIMEMoment)
-            ) {
-              req.push(
-                Object.assign(
-                  {},
-                  data,
-                  Object.assign(
-                    {
-                      TIME_ID: day.TIME_ID,
-                      PROCESS_TIME: moment().format(
-                        "YYYY-MM-DDT " + START_TIME
-                      ),
-                      END_TIME,
-                      START_TIME
-                    },
-                    otherSet
-                  )
-                )
-              );
-            }
-          });
-        const lg = req.length;
-        const HANDLE_TIME = data.HANDLE_TIME;
-        const averageHandleTime =
-          !isNaN(HANDLE_TIME) && HANDLE_TIME > 0
-            ? (HANDLE_TIME / lg).toFixed(4)
-            : HANDLE_TIME;
-        req = req.map(prop =>
-          baseReq.updateApplication(
-            Object.assign({}, prop, {
-              HANDLE_TIME: averageHandleTime
-            }),
-            reqOption
-          )
+        // 取消拆分后逻辑
+
+        data.START_TIME = fromTime;
+        data.END_TIME = endTime;
+        data.PROCESS_TIME = moment().format(
+          "YYYY-MM-DDT " + fromTime
         );
-        return Promise.all(req);
+        // 取消拆分
+        // dayInfos &&
+        //   dayInfos.forEach(day => {
+        //     const { END_TIME, START_TIME } = day;
+        //     const END_TIMEMoment = moment(date + " " + END_TIME);
+        //     const START_TIMEMoment = moment(date + " " + START_TIME);
+        //     if (
+        //       fromTimeMoment.isBefore(END_TIMEMoment) &&
+        //       endTimeMoment.isAfter(START_TIMEMoment)
+        //     ) {
+        //       req.push(
+        //         Object.assign(
+        //           {},
+        //           data,
+        //           Object.assign(
+        //             {
+        //               TIME_ID: day.TIME_ID,
+        //               PROCESS_TIME: moment().format(
+        //                 "YYYY-MM-DDT " + START_TIME
+        //               ),
+        //               END_TIME,
+        //               START_TIME
+        //             },
+        //             otherSet
+        //           )
+        //         )
+        //       );
+        //     }
+        //   });
+        // const lg = req.length;
+        // const HANDLE_TIME = data.HANDLE_TIME;
+        // const averageHandleTime =
+        //   !isNaN(HANDLE_TIME) && HANDLE_TIME > 0
+        //     ? (HANDLE_TIME / lg).toFixed(4)
+        //     : HANDLE_TIME;
+        // req = req.map(prop =>
+        //   baseReq.updateApplication(
+        //     Object.assign({}, prop, {
+        //       HANDLE_TIME: averageHandleTime
+        //     }),
+        //     reqOption
+        //   )
+        // );
+        // return Promise.all(req);
+        return baseReq.updateApplication({
+          ...data,
+          ...otherSet
+        }, reqOption);
       } else {
+        // 正常申请的单据,申请人与处理人一致，不需要评分，默认评分 20190308
+        if (CONTACT && HANDLER && CONTACT === HANDLER && STATUS === 'Processing') {
+          data.STATUS = "Closed";
+          data.SCORE = 5;
+        }
         return baseReq.updateApplication(data, reqOption);
       }
     };

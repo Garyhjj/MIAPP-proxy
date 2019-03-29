@@ -9,6 +9,7 @@ const Router = require("koa-router"),
   board_route = require('./board'),
   result_route = require('./exam'),
   tax_route = require('./tax');
+  avtiv_route = require('./activity');
 
 function route(app) {
   const addRoute = (route) =>
@@ -24,6 +25,7 @@ function route(app) {
   addRoute(board_route);
   addRoute(result_route);
   addRoute(tax_route);
+  addRoute(avtiv_route);
 }
 
 module.exports = route;

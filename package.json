@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/Garyhjj/MIAPP-proxy#readme",
   "dependencies": {
+    "consolidate": "^0.15.1",
     "ejs": "^2.5.7",
     "https": "^1.0.0",
     "jsonwebtoken": "8.1.0",

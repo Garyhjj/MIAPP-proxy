@@ -13,7 +13,7 @@ function formatTableDefine(metaData) {
     const middle = Object.create(null);
     if (Array.isArray(metaData)) {
         metaData.forEach(m => {
-            middle[m.name] = dbType[m.fetchType] ? dbType[m.fetchType] : tableColomnType.string
+            middle[m.name] = dbType[m.fetchType] ? dbType[m.fetchType] : 'tableColomnType.string'
         })
     }
     let tableDefine = ``;

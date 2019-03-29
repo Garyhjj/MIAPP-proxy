@@ -26,7 +26,7 @@ class ReservationTipsCollection extends TipsCollection {
             if (this.hasPrivilege()) {
                 adminTip = await Promise.all([await req.getServerList({
                     empno: empno
-                }, miOption).then(l => new ModuleTip('adminUndoneTip', l.length)), this.getAdminScoringTip(empno, miOption)]);
+                }, miOption).then(l => new ModuleTip('adminUndoneTip', l.length))/*, this.getAdminScoringTip(empno, miOption)*/]);
             }
         } else {
             return oriRes

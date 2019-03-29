@@ -110,7 +110,60 @@ function arrayClassifyByOne(target, prop) {
   })
   return out;
 }
+const wait = (after) => {
+  return new Promise((r, j) => {
+      setTimeout(() => {
+          try {
+              r('ok');
+          } catch (e) {
+              j(e);
+          }
+      }, after);
+
+  })
+}
+function promiseFlow(fn) {
+  if (typeof fn === 'function') {
+      return new Promise((resolve, reject) => {
+          promiseFlow.list.push({
+              resolve,
+              reject,
+              fn
+          });
+      })
+  } else {
+      return Promise.reject('no fn');
+  }
+}
+promiseFlow.list = [];
+promiseFlow.startFlow = async function () {
+  const list = this.list;
+  if (list.length > 0) {
+      const first = list.shift();
+      let error;
+      const res = await first.fn().catch((err) => {
+        error = err;
+        first.reject(err);
+        return null;
+      })
+      if(!error) {
+        await first.resolve(res);
+      }
+      promiseFlow.startFlow();
+  }
+}
+const push = Array.prototype.push;
+promiseFlow.list.push = function (n) {
+  const lg = this.length;
+  if (lg === 0) {
+      setTimeout(() => {
+          promiseFlow.startFlow()
+      }, 200);
+  }
+  return push.call(this, n);
+}
 module.exports = {
+  promiseFlow,
   hasOwn,
   fakeToken,
   isArray,
@@ -166,29 +219,65 @@ module.exports = {
   },
   sortUtils: {
     byCharCode: (a, b, isAscend = true) => {
-      if (typeof a !== "string" || typeof b !== "string") return 0;
-      const res = a.charCodeAt(0) - b.charCodeAt(0);
+      a = a + '';
+      b = b + '';
+      const res = a > b ? 1 : a === b ? 0 : -1;
       return isAscend ? res : -res;
     },
     byDate: (a, b, isAscend = true, format) => {
       const toDateA = moment(a, format);
       const toDateB = moment(b, format);
-      if (!toDateA.isValid() || !toDateB.isValid()) return 0;
-      const res = toDateA.toDate().getTime() - toDateB.toDate().getTime();
+      const isValida = toDateA.isValid(),
+        isValidb = toDateB.isValid();
+      let res;
+      if (!isValida && !isValidb) {
+        return sortUtils.byCharCode(a, b, isAscend);
+      } else if (isValida && !isValidb) {
+        res = 1;
+      } else if (!isValida && isValidb) {
+        res = -1;
+      } else {
+        res = toDateA.toDate().getTime() - toDateB.toDate().getTime();
+      }
       return isAscend ? res : -res;
     },
-    byTime: (a, b, isAscend = true, format = "HH:mm:ss") => {
-      const toDateA = moment("2018-01-01T " + a, "YYYY-MM-DDT " + format);
-      const toDateB = moment("2018-01-01T " + b, "YYYY-MM-DDT " + format);
-      if (!toDateA.isValid() || !toDateB.isValid()) return 0;
-      const res = toDateA.toDate().getTime() - toDateB.toDate().getTime();
+    byTime: (
+      a,
+      b,
+      isAscend = true,
+      format = 'HH:mm:ss',
+    ) => {
+      const toDateA = moment('2018-01-01T ' + a, 'YYYY-MM-DDT ' + format);
+      const toDateB = moment('2018-01-01T ' + b, 'YYYY-MM-DDT ' + format);
+      const isValida = toDateA.isValid(),
+        isValidb = toDateB.isValid();
+      let res;
+      if (!isValida && !isValidb) {
+        return sortUtils.byCharCode(a, b, isAscend);
+      } else if (isValida && !isValidb) {
+        res = 1;
+      } else if (!isValida && isValidb) {
+        res = -1;
+      } else {
+        res = toDateA.toDate().getTime() - toDateB.toDate().getTime();
+      }
       return isAscend ? res : -res;
     },
     byNumber: (a, b, isAscend = true) => {
-      if (!isNumber(a) || !isNumber(b)) return 0;
-      const res = Number(a) - Number(b);
+      const isValida = isNumber(a),
+        isValidb = isNumber(b);
+      let res;
+      if (!isValida && !isValidb) {
+        return sortUtils.byCharCode(a, b, isAscend);
+      } else if (isValida && !isValidb) {
+        res = 1;
+      } else if (!isValida && isValidb) {
+        res = -1;
+      } else {
+        res = Number(a) - Number(b);
+      }
       return isAscend ? res : -res;
-    }
+    },
   },
   isProduction() {
     return !!(process.env.NODE_ENV && process.env.NODE_ENV.trim() === "production");

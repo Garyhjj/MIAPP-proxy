@@ -58,5 +58,6 @@
              localStorage.setItem('tokenExpires', exp);
          }, tokenMes);
          return await page.waitFor(1000);
-     }
+     },
+     defaultAdminMail: 'gary.h@mic.com.tw'
  }

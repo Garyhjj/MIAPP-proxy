@@ -224,7 +224,10 @@ class TableFactory {
             }
             return db.execute(prefix + middle + last).then((res) => {
                 if (typeof afterUpdate === 'function') {
-                    afterUpdate(target, old);
+                    const aRes = afterUpdate(target, old);
+                    if (aRes instanceof Promise) {
+                        return aRes.then(() => res);
+                    }
                 }
                 return res;
             });
