@@ -1,0 +1,23 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>
+    <%= title %>
+  </title>
+</head>
+<style>
+</style>
+
+
+<body>
+  <h3> Dear
+    <%=app.contact_name_en %>: </h3>
+
+  <h3 style="text-indent: 30px;">您的【<%=app.SERVICE_DESC %>】需求已經成功預約，IT工作人員將于【<%=app.service_time %>】提供服務，請您預留時間配合，聯絡電話<%= app.handler_contact_way %>，謝謝！</h3>
+
+  <hr>
+  <div style="color:blue">系統郵件，請勿回復</div>
+</body>
+
+</html>

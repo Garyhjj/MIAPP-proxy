@@ -6,7 +6,13 @@ const isArray = Array.isArray,
   isErr = util.isReqError,
   httpErr400 = util.httpErr400,
   moment = require("moment"),
-  updateWithLock = util.updateStoreWithLockResolver("reservation", "ID");
+  updateWithLock = util.updateStoreWithLockResolver("reservation", "ID"),
+  ejs = require('consolidate').ejs,
+  sendMail = require('../../../../../util/mailer'),
+  path = require('path'),
+  sortUtils = require('../../../../../util').sortUtils,
+  db = require('../../../../../lib/oracleDB'),
+  defaultAdminMail = 'gary.h@mic.com.tw';
 updateWithLock.isUniquekeyValid = data => data.ID > -1;
 module.exports = {
   async getServerList(query, reqOption) {
@@ -98,7 +104,7 @@ module.exports = {
           if (sHandler && sHandler !== qHandler) {
             return httpErr400("该单据已被人抢了,请刷新");
           }
-          if(!app.FIRST_RESPONSE_TIME && S_STATUS === 'New') {
+          if (!app.FIRST_RESPONSE_TIME && S_STATUS === 'New') {
             data.FIRST_RESPONSE_TIME = moment().format('YYYY-MM-DDT HH:mm:ss');
           }
         }
@@ -211,16 +217,133 @@ module.exports = {
         }, reqOption);
       } else {
         // 正常申请的单据,申请人与处理人一致，不需要评分，默认评分 20190308
-        if (CONTACT && HANDLER && CONTACT === HANDLER && STATUS === 'Processing') {
+        if (CONTACT && HANDLER && CONTACT === HANDLER && STATUS === 'Scoring') {
           data.STATUS = "Closed";
           data.SCORE = 5;
         }
         return baseReq.updateApplication(data, reqOption);
       }
     };
-    return updateWithLock.update(fn, query);
+    const res = await updateWithLock.update(fn, query);
+    if (!data.addServiceLater) {
+      if (+data.ID === 0) {
+        sendApplySuccMail(data);
+      } else {
+        const {
+          STATUS
+        } = data;
+        if (STATUS === 'Scoring') {
+          sendCommentMail(data);
+        } else if (STATUS === 'Closed') {
+          if (data.SCORE <= 3) {
+            sendLowScoreMail(data);
+          }
+        }
+      }
+    }
+
   }
 };
+
+async function sendApplySuccMail(app) {
+  const title = 'IT服務預約之預約成功通知';
+  app.service_time = moment(app.SERVICE_DATE).format('YYYY-MM-DD ') + ` ${app.START_TIME} ~ ${app.END_TIME}`;
+  const [contact, handler] = await Promise.all([db.search(`SELECT NICK_NAME,USER_NAME FROM MOA_GL_USERS WHERE EMPNO = ${app.CONTACT}`),
+    db.search(`SELECT NICK_NAME,USER_NAME,MOBILE,TELEPHONE FROM MOA_GL_USERS WHERE EMPNO = ${app.CONTACT}`)
+  ]);
+  if (contact.length > 0) {
+    c = contact[0];
+    app.contact_name_cn = c.NICK_NAME;
+    app.contact_name_en = c.USER_NAME;
+  }
+  if (handler.length > 0) {
+    h = handler[0];
+    app.handler_contact_way = `${h.TELEPHONE}/${h.MOBILE}`;
+    app.handler_name_en = h.USER_NAME;
+  }
+  const html = await ejs(path.resolve(__dirname, '../../views/apply-success.ejs'), {
+    app,
+    title
+  });
+  const mailOptions = {
+    from: 'it.reservation@mic.com', // 发件地址
+    to: 'MSL_ITService@mic.com.tw;jb.hu@mic.com.tw;' + defaultAdminMail, // 收件列表
+    subject: title, // 标题
+    //text和html两者只支持一种
+    html: html,
+  };
+  // send mail with defined transport object
+  sendMail(mailOptions).then(res => {
+    console.log(res);
+  })
+}
+
+function sendCommentMail(app) {
+  const title = 'IT服務預約之需求完成通知';
+  app.service_time = moment(app.SERVICE_DATE).format('YYYY-MM-DD ') + ` ${app.START_TIME} ~ ${app.END_TIME}`;
+  const [contact, handler] = await Promise.all([db.search(`SELECT NICK_NAME,USER_NAME FROM MOA_GL_USERS WHERE EMPNO = ${app.CONTACT}`),
+    db.search(`SELECT NICK_NAME,USER_NAME,MOBILE,TELEPHONE FROM MOA_GL_USERS WHERE EMPNO = ${app.CONTACT}`)
+  ]);
+  if (contact.length > 0) {
+    c = contact[0];
+    app.contact_name_cn = c.NICK_NAME;
+    app.contact_name_en = c.USER_NAME;
+  }
+  if (handler.length > 0) {
+    h = handler[0];
+    app.handler_contact_way = `${h.TELEPHONE}/${h.MOBILE}`;
+    app.handler_name_en = h.USER_NAME;
+    app.handler_name_cn = h.NICK_NAME;
+  }
+  const html = await ejs(path.resolve(__dirname, '../../views/inform-comment.ejs'), {
+    app,
+    title
+  });
+  const mailOptions = {
+    from: 'it.reservation@mic.com', // 发件地址
+    to: 'MSL_ITService@mic.com.tw;jb.hu@mic.com.tw;' + defaultAdminMail, // 收件列表
+    subject: title, // 标题
+    //text和html两者只支持一种
+    html: html,
+  };
+  // send mail with defined transport object
+  sendMail(mailOptions).then(res => {
+    console.log(res);
+  })
+}
+
+function sendLowScoreMail(data) {
+  const title = 'IT服務預約之需求完成通知';
+  app.service_time = moment(app.SERVICE_DATE).format('YYYY-MM-DD ') + ` ${app.START_TIME} ~ ${app.END_TIME}`;
+  const [contact, handler] = await Promise.all([db.search(`SELECT NICK_NAME,USER_NAME FROM MOA_GL_USERS WHERE EMPNO = ${app.CONTACT}`),
+    db.search(`SELECT NICK_NAME,USER_NAME,MOBILE,TELEPHONE FROM MOA_GL_USERS WHERE EMPNO = ${app.CONTACT}`)
+  ]);
+  if (contact.length > 0) {
+    c = contact[0];
+    app.contact_name_cn = c.NICK_NAME;
+    app.contact_name_en = c.USER_NAME;
+  }
+  if (handler.length > 0) {
+    h = handler[0];
+    app.handler_name_en = h.USER_NAME;
+    app.handler_name_cn = h.NICK_NAME;
+  }
+  const html = await ejs(path.resolve(__dirname, '../../views/low-score.ejs'), {
+    app,
+    title
+  });
+  const mailOptions = {
+    from: 'it.reservation@mic.com', // 发件地址
+    to: 'jb.hu@mic.com.tw;' + defaultAdminMail, // 收件列表
+    subject: title, // 标题
+    //text和html两者只支持一种
+    html: html,
+  };
+  // send mail with defined transport object
+  sendMail(mailOptions).then(res => {
+    console.log(res);
+  })
+}
 
 function testTime(date, endTime, preTime) {
   const lastTime = date + " " + endTime;

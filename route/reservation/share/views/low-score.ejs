@@ -1,0 +1,25 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>
+    <%= title %>
+  </title>
+</head>
+<style>
+</style>
+
+
+<body>
+  <h3> Dear
+    jb: </h3>
+    
+  <h3 style="text-indent: 30px;">
+        【<%= app.handler_name_cn%>】于【<%=app.service_time %>】處理【<%=app.SERVICE_DESC %>】需求被【<%=app.contact_name_cn %>(<%=app.CONTACT %>)】評分為【<%=app.SCORE %>】分，評語：【<%= app.USER_COMMENT %>】，請您跟進處理，謝謝！
+</h3>
+
+  <hr>
+  <div style="color:blue">系統郵件，請勿回復</div>
+</body>
+
+</html>
